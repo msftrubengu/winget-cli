@@ -82,7 +82,7 @@ PROCESS {
 
 <#
 .SYNOPSIS
-Windows Package Manager (Preview) v1.3.1391-preview
+Windows Package Manager (Preview) v1.4.2161-preview
 Copyright (c) Microsoft Corporation. All rights reserved.
 
 The winget command line utility enables installing applications and other packages from the command line.
@@ -205,7 +205,7 @@ PROCESS {
 
 <#
 .SYNOPSIS
-Windows Package Manager (Preview) v1.3.1391-preview
+Windows Package Manager (Preview) v1.4.2161-preview
 Copyright (c) Microsoft Corporation. All rights reserved.
 
 The winget command line utility enables installing applications and other packages from the command line.
@@ -333,7 +333,7 @@ PROCESS {
 
 <#
 .SYNOPSIS
-Windows Package Manager (Preview) v1.3.1391-preview
+Windows Package Manager (Preview) v1.4.2161-preview
 Copyright (c) Microsoft Corporation. All rights reserved.
 
 The winget command line utility enables installing applications and other packages from the command line.
@@ -481,7 +481,7 @@ PROCESS {
 
 <#
 .SYNOPSIS
-Windows Package Manager (Preview) v1.3.1391-preview
+Windows Package Manager (Preview) v1.4.2161-preview
 Copyright (c) Microsoft Corporation. All rights reserved.
 
 The winget command line utility enables installing applications and other packages from the command line.
@@ -617,7 +617,7 @@ PROCESS {
 
 <#
 .SYNOPSIS
-Windows Package Manager (Preview) v1.3.1391-preview
+Windows Package Manager (Preview) v1.4.2161-preview
 Copyright (c) Microsoft Corporation. All rights reserved.
 
 The winget command line utility enables installing applications and other packages from the command line.
@@ -746,7 +746,7 @@ PROCESS {
 
 <#
 .SYNOPSIS
-Windows Package Manager (Preview) v1.3.1391-preview
+Windows Package Manager (Preview) v1.4.2161-preview
 Copyright (c) Microsoft Corporation. All rights reserved.
 
 The winget command line utility enables installing applications and other packages from the command line.

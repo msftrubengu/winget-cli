@@ -17,8 +17,5 @@ param (
 )
 
 New-Item $OutDir -ItemType Directory -Force -ErrorAction Stop
-Copy-Item "$PSScriptRoot\Microsoft.WinGet.Client.psd1" $OutDir -Force -ErrorAction Stop
-Copy-Item "$PSScriptRoot\Microsoft.WinGet.Client.psm1" $OutDir -Force -ErrorAction Stop
-Copy-Item "$PSScriptRoot\Format.ps1xml" $OutDir -Force -ErrorAction Stop
-
+Copy-Item -Path "$PSScriptRoot\..\Module\*" -Destination $OutDir -Recurse -Force -ErrorAction Stop
 Write-Host 'Done!' -ForegroundColor Green
