@@ -9,7 +9,6 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
     using System;
     using System.IO;
     using Microsoft.WinGet.Client.DscResouces;
-    using Newtonsoft.Json.Linq;
     using Xunit;
     using Xunit.Abstractions;
 
@@ -40,8 +39,52 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
             Directory.Delete(this.mockFileDirectory, true);
         }
 
+        /// <summary>
+        /// Tests with and empty object.
+        /// </summary>
         [Fact]
-        public void UserSettings_GoodInput()
+        public void UserSettings_EmptyInput()
+        {
+            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
+
+            var inputSettings = new
+            {
+            };
+
+            _ = new UserSettings(inputSettings, UserSettings.ResourceMode.Full, userSettingsFile);
+        }
+
+        /// <summary>
+        /// Tests with null.
+        /// </summary>
+        [Fact]
+        public void UserSettings_Null()
+        {
+            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
+            Assert.Throws<ArgumentNullException>(
+                () => _ = new UserSettings(null, UserSettings.ResourceMode.Full, userSettingsFile));
+        }
+
+        /// <summary>
+        /// Tests bad input.
+        /// </summary>
+        /// <param name="input">Bad input</param>
+        [Theory]
+        [InlineData(5)]
+        [InlineData("data")]
+        public void UserSettings_BadInput(object input)
+        {
+            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
+
+            Assert.Throws<InvalidCastException>(
+                () => _ = new UserSettings(input, UserSettings.ResourceMode.Full, userSettingsFile));
+        }
+
+        /// <summary>
+        /// Tests Set with an empty existing setting file.
+        /// </summary>
+        [Fact]
+        public void UserSettings_Set()
         {
             var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
 
@@ -60,7 +103,7 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
                     preferences = new
                     {
                         scope = "user",
-                        locale = new string[] { "en-US", "es-Mx" },
+                        locale = new string[] { "en-US", "es-MX" },
                     },
                 },
                 telemetry = new
@@ -69,67 +112,330 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
                 },
             };
 
-            _ = new UserSettings(inputSettings, UserSettings.ResourceMode.Full, userSettingsFile);
+            string expectedSettingsContentFile = @"{
+  ""source"": {
+    ""autoUpdateIntervalInMinutes"": 5
+  },
+  ""visual"": {
+    ""progressBar"": ""rainbow""
+  },
+  ""installBehavior"": {
+    ""preferences"": {
+      ""scope"": ""user"",
+      ""locale"": [
+        ""en-US"",
+        ""es-MX""
+      ]
+    }
+  },
+  ""telemetry"": {
+    ""disable"": true
+  },
+  ""$schema"": ""https://aka.ms/winget-settings.schema.json""
+}";
 
-            this.log.WriteLine($"Result Content");
+            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Full, userSettingsFile);
+
+            userSettings.Set();
+
+            Assert.Equal(expectedSettingsContentFile, File.ReadAllText(userSettingsFile));
         }
 
-        /*
-        [Fact]
-        public void UserSettings_GoodInput_ToCamelCase()
-        {
-        }
-
-        [Fact]
-        public void UserSettings_EmptyInput()
-        {
-        }
-
-        [Fact]
-        public void UserSettings_Null()
-        {
-        }
-
-        [Fact]
-        public void UserSettings_BadInput()
-        {
-        }
-
-        [Fact]
-        public void UserSettings_Set_WithSchema()
-        {
-        }
-
-        [Fact]
-        public void UserSettings_Set_WithoutSchema()
-        {
-        }
-
-        [Fact]
-        public void UserSettings_Set_Full_NewFile()
-        {
-        }
-
+        /// <summary>
+        /// Tests Set when a settings file already exists. Must overrite it.
+        /// </summary>
         [Fact]
         public void UserSettings_Set_Full_ExistingFile()
         {
+            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
+
+            string existingContentFile = @"{
+  ""$schema"": ""https://aka.ms/winget-settings.schema.json"",
+  ""logging"": {
+    ""level"": [
+      ""verbose"",
+      ""info"",
+      ""warning"",
+      ""error"",
+      ""critical""
+    ]
+  },
+}";
+
+            File.WriteAllText(userSettingsFile, existingContentFile);
+
+            var inputSettings = new
+            {
+                source = new
+                {
+                    autoUpdateIntervalInMinutes = 5,
+                },
+                visual = new
+                {
+                    progressBar = "rainbow",
+                },
+                installBehavior = new
+                {
+                    preferences = new
+                    {
+                        scope = "user",
+                        locale = new string[] { "en-US", "es-MX" },
+                    },
+                },
+                telemetry = new
+                {
+                    disable = true,
+                },
+            };
+
+            string expectedSettingsContentFile = @"{
+  ""source"": {
+    ""autoUpdateIntervalInMinutes"": 5
+  },
+  ""visual"": {
+    ""progressBar"": ""rainbow""
+  },
+  ""installBehavior"": {
+    ""preferences"": {
+      ""scope"": ""user"",
+      ""locale"": [
+        ""en-US"",
+        ""es-MX""
+      ]
+    }
+  },
+  ""telemetry"": {
+    ""disable"": true
+  },
+  ""$schema"": ""https://aka.ms/winget-settings.schema.json""
+}";
+
+            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Full, userSettingsFile);
+
+            userSettings.Set();
+
+            Assert.Equal(expectedSettingsContentFile, File.ReadAllText(userSettingsFile));
         }
 
+        /// <summary>
+        /// Tests Set with empty input settings and an existing settings file.
+        /// </summary>
         [Fact]
-        public void UserSettings_Set_Partial_EmptyFile()
+        public void UserSettings_Set_Partial_EmptySettings()
         {
+            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
+
+            string existingContentFile = @"{
+  ""$schema"": ""https://aka.ms/winget-settings.schema.json"",
+  ""logging"": {
+    ""level"": [
+      ""verbose"",
+      ""info"",
+      ""warning"",
+      ""error"",
+      ""critical""
+    ]
+  }
+}";
+
+            File.WriteAllText(userSettingsFile, existingContentFile);
+
+            var inputSettings = new
+            {
+            };
+
+            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Partial, userSettingsFile);
+
+            userSettings.Set();
+
+            Assert.Equal(existingContentFile, File.ReadAllText(userSettingsFile));
         }
 
+        /// <summary>
+        /// Tests Set with partial merge and no collisions.
+        /// </summary>
         [Fact]
         public void UserSettings_Set_Partial_Merge()
         {
+            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
+
+            string existingContentFile = @"{
+  ""$schema"": ""https://aka.ms/winget-settings.schema.json"",
+  ""logging"": {
+    ""level"": [
+      ""verbose"",
+      ""info"",
+      ""warning"",
+      ""error"",
+      ""critical""
+    ]
+  },
+}";
+
+            File.WriteAllText(userSettingsFile, existingContentFile);
+
+            var inputSettings = new
+            {
+                source = new
+                {
+                    autoUpdateIntervalInMinutes = 5,
+                },
+                visual = new
+                {
+                    progressBar = "rainbow",
+                },
+                installBehavior = new
+                {
+                    preferences = new
+                    {
+                        scope = "user",
+                        locale = new string[] { "en-US", "es-MX" },
+                    },
+                },
+                telemetry = new
+                {
+                    disable = true,
+                },
+            };
+
+            string expectedSettingsContentFile = @"{
+  ""$schema"": ""https://aka.ms/winget-settings.schema.json"",
+  ""logging"": {
+    ""level"": [
+      ""verbose"",
+      ""info"",
+      ""warning"",
+      ""error"",
+      ""critical""
+    ]
+  },
+  ""source"": {
+    ""autoUpdateIntervalInMinutes"": 5
+  },
+  ""visual"": {
+    ""progressBar"": ""rainbow""
+  },
+  ""installBehavior"": {
+    ""preferences"": {
+      ""scope"": ""user"",
+      ""locale"": [
+        ""en-US"",
+        ""es-MX""
+      ]
+    }
+  },
+  ""telemetry"": {
+    ""disable"": true
+  }
+}";
+
+            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Partial, userSettingsFile);
+
+            userSettings.Set();
+
+            Assert.Equal(expectedSettingsContentFile, File.ReadAllText(userSettingsFile));
         }
 
+        /// <summary>
+        /// Tests Set with partial merge with collisions. Input must triumph.
+        /// </summary>
         [Fact]
         public void UserSettings_Set_Partial_MergeAndOverwrite()
         {
+            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
+
+            string existingContentFile = @"{
+  ""$schema"": ""https://aka.ms/winget-settings.schema.json"",
+  ""logging"": {
+    ""level"": [
+      ""verbose"",
+      ""info"",
+      ""warning"",
+      ""error"",
+      ""critical""
+    ]
+  },
+  ""installBehavior"": {
+    ""preferences"": {
+      ""locale"": [
+        ""fr-FR"",
+      ]
+    }
+  },
+  ""telemetry"": {
+    ""disable"": false
+  },
+  ""source"": {
+    ""autoUpdateIntervalInMinutes"": 15
+  },
+}";
+
+            File.WriteAllText(userSettingsFile, existingContentFile);
+
+            var inputSettings = new
+            {
+                source = new
+                {
+                    autoUpdateIntervalInMinutes = 5,
+                },
+                visual = new
+                {
+                    progressBar = "rainbow",
+                },
+                installBehavior = new
+                {
+                    preferences = new
+                    {
+                        scope = "user",
+                        locale = new string[] { "en-US", "es-MX" },
+                    },
+                },
+                telemetry = new
+                {
+                    disable = true,
+                },
+            };
+
+            string expectedSettingsContentFile = @"{
+  ""$schema"": ""https://aka.ms/winget-settings.schema.json"",
+  ""logging"": {
+    ""level"": [
+      ""verbose"",
+      ""info"",
+      ""warning"",
+      ""error"",
+      ""critical""
+    ]
+  },
+  ""installBehavior"": {
+    ""preferences"": {
+      ""locale"": [
+        ""fr-FR"",
+        ""en-US"",
+        ""es-MX""
+      ],
+      ""scope"": ""user""
+    }
+  },
+  ""telemetry"": {
+    ""disable"": true
+  },
+  ""source"": {
+    ""autoUpdateIntervalInMinutes"": 5
+  },
+  ""visual"": {
+    ""progressBar"": ""rainbow""
+  }
+}";
+
+            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Partial, userSettingsFile);
+
+            userSettings.Set();
+
+            Assert.Equal(expectedSettingsContentFile, File.ReadAllText(userSettingsFile));
         }
 
+        /*
         [Fact]
         public void UserSettings_Test_Full_Equal()
         {

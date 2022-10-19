@@ -108,30 +108,32 @@ namespace Microsoft.WinGet.Client.DscResouces
         /// </summary>
         public void Set()
         {
+            var result = this.jsonSettings;
+
             // Merge settings.
             if (this.Mode == ResourceMode.Partial)
             {
                 var fileSettings = this.ConvertSettingsFileToJObject();
-                this.jsonSettings.Merge(fileSettings, new JsonMergeSettings
+
+                // To make the input setting to triumph, they have to be merged into the existing
+                // JObject.
+                fileSettings.Merge(result, new JsonMergeSettings
                 {
                     MergeArrayHandling = MergeArrayHandling.Union,
                     MergeNullValueHandling = MergeNullValueHandling.Ignore,
                 });
+
+                result = fileSettings;
             }
 
-            if (!this.jsonSettings.ContainsKey(SchemaKey))
+            if (!result.ContainsKey(SchemaKey))
             {
-                this.jsonSettings.Add(SchemaKey, SchemaValue);
+                result.Add(SchemaKey, SchemaValue);
             }
-
-            string serialized = JsonConvert.SerializeObject(
-                this.jsonSettings,
-                Formatting.Indented,
-                new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() });
 
             File.WriteAllText(
                 this.userFileSettingsPath,
-                serialized);
+                result.ToString(Formatting.Indented));
         }
 
         private JObject ConvertSettingsFileToJObject()
@@ -141,7 +143,7 @@ namespace Microsoft.WinGet.Client.DscResouces
                 return new JObject();
             }
 
-            return JObject.Parse(this.userFileSettingsPath);
+            return JObject.Parse(File.ReadAllText(this.userFileSettingsPath));
         }
     }
 }

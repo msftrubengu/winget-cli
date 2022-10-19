@@ -31,7 +31,7 @@ New-Item $moduleOutDir -ItemType Directory -Force -ErrorAction Stop
 $archs = 'x64','x86'
 foreach ($arch in $archs)
 {
-    & "$PSScriptRoot\Copy-PlatformBinaries.ps1" -Platform $arch -Configuration $Configuration -OutDir $moduleOutDir -CoreFramework "net5.0-windows10.0.22000.0"
+    & "$PSScriptRoot\Copy-PlatformBinaries.ps1" -Platform $arch -Configuration $Configuration -OutDir $moduleOutDir -CoreFramework "net6.0-windows10.0.22000.0"
     & "$PSScriptRoot\Copy-PlatformBinaries.ps1" -Platform $arch -Configuration $Configuration -OutDir $moduleOutDir -DesktopFramework "net461"
 }
 
