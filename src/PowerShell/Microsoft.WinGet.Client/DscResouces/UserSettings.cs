@@ -8,9 +8,10 @@ namespace Microsoft.WinGet.Client.DscResouces
 {
     using System;
     using System.IO;
+    using System.Linq;
+    using Microsoft.WinGet.Client.Exceptions;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
-    using Newtonsoft.Json.Serialization;
 
     /// <summary>
     /// WinGet user settings DscResource.
@@ -82,8 +83,7 @@ namespace Microsoft.WinGet.Client.DscResouces
         /// <returns>Source.</returns>
         public UserSettings Get()
         {
-            // this or a new copy?
-            return this;
+            return new UserSettings(this.Settings, this.Mode, this.userFileSettingsPath);
         }
 
         /// <summary>
@@ -93,14 +93,25 @@ namespace Microsoft.WinGet.Client.DscResouces
         public bool Test()
         {
             var fileSettings = this.ConvertSettingsFileToJObject();
+            var jObject = (JObject)this.jsonSettings.DeepClone();
 
-            if (this.Mode == ResourceMode.Full)
+            // Don't fail because of the schema.
+            if (fileSettings.ContainsKey(SchemaKey))
             {
-                return JToken.DeepEquals(this.jsonSettings, fileSettings);
+                fileSettings.Remove(SchemaKey);
             }
 
-            // verify one by one. have to check for types. sounds hard.
-            return false;
+            if (jObject.ContainsKey(SchemaKey))
+            {
+                jObject.Remove(SchemaKey);
+            }
+
+            if (this.Mode == ResourceMode.Partial)
+            {
+                return this.PartialCompare(jObject, fileSettings);
+            }
+
+            return JToken.DeepEquals(jObject, fileSettings);
         }
 
         /// <summary>
@@ -108,7 +119,7 @@ namespace Microsoft.WinGet.Client.DscResouces
         /// </summary>
         public void Set()
         {
-            var result = this.jsonSettings;
+            var jObject = (JObject)this.jsonSettings.DeepClone();
 
             // Merge settings.
             if (this.Mode == ResourceMode.Partial)
@@ -117,23 +128,26 @@ namespace Microsoft.WinGet.Client.DscResouces
 
                 // To make the input setting to triumph, they have to be merged into the existing
                 // JObject.
-                fileSettings.Merge(result, new JsonMergeSettings
+                fileSettings.Merge(jObject, new JsonMergeSettings
                 {
                     MergeArrayHandling = MergeArrayHandling.Union,
                     MergeNullValueHandling = MergeNullValueHandling.Ignore,
                 });
 
-                result = fileSettings;
+                jObject = fileSettings;
             }
 
-            if (!result.ContainsKey(SchemaKey))
+            if (!jObject.ContainsKey(SchemaKey))
             {
-                result.Add(SchemaKey, SchemaValue);
+                jObject.Add(SchemaKey, SchemaValue);
             }
+
+            var orderedJObject = this.CreateAlphabeticallyOrderedJObject(jObject);
+            var json = orderedJObject.ToString(Formatting.Indented);
 
             File.WriteAllText(
                 this.userFileSettingsPath,
-                result.ToString(Formatting.Indented));
+                json);
         }
 
         private JObject ConvertSettingsFileToJObject()
@@ -144,6 +158,84 @@ namespace Microsoft.WinGet.Client.DscResouces
             }
 
             return JObject.Parse(File.ReadAllText(this.userFileSettingsPath));
+        }
+
+        /// <summary>
+        /// Helper method to order alphabetically properties. Newtonsoft doesn't have a nice way
+        /// to do it via a custom JsonConverter.
+        /// </summary>
+        /// <param name="jObject">JObject</param>
+        /// <returns>New ordered JObject.</returns>
+        private JObject CreateAlphabeticallyOrderedJObject(JObject jObject)
+        {
+            JObject newJObject = new ();
+            var orderedProperties = jObject.Properties().OrderBy(p => p.Name, StringComparer.Ordinal);
+            foreach (var property in orderedProperties)
+            {
+                if (property.Value.Type == JTokenType.Object)
+                {
+                    newJObject.Add(
+                        property.Name,
+                        this.CreateAlphabeticallyOrderedJObject((JObject)property.Value));
+                }
+                else
+                {
+                    newJObject.Add(property);
+                }
+            }
+
+            return newJObject;
+        }
+
+        private bool PartialCompare(JObject jObject, JObject other)
+        {
+            try
+            {
+                this.PartialDeepEquals(jObject, other);
+            }
+            catch (DscResourceException)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        // This doesn't support JArray object comparison, but we don't have arrays of type object so far.
+        private void PartialDeepEquals(JToken jToken, JToken other)
+        {
+            if (jToken.Type != other.Type)
+            {
+                throw new DscResourceException();
+            }
+
+            if (!JToken.DeepEquals(jToken, other))
+            {
+                if (jToken.Type == JTokenType.Object)
+                {
+                    var jObject = (JObject)jToken;
+                    var otherJObject = (JObject)other;
+
+                    var properties = jObject.Properties();
+                    foreach (var property in properties)
+                    {
+                        // If the property is not there then give up.
+                        if (!otherJObject.ContainsKey(property.Name))
+                        {
+                            throw new DscResourceException();
+                        }
+
+                        this.PartialDeepEquals(
+                                property.Value,
+                                otherJObject.GetValue(property.Name));
+                    }
+                }
+                else if (jToken is JValue)
+                {
+                    // If this is a JValue (string, integer, date, etc) and DeepEquals fails then is not equal.
+                    throw new DscResourceException();
+                }
+            }
         }
     }
 }

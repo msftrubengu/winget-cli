@@ -9,6 +9,7 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
     using System;
     using System.IO;
     using Microsoft.WinGet.Client.DscResouces;
+    using Newtonsoft.Json.Linq;
     using Xunit;
     using Xunit.Abstractions;
 
@@ -113,32 +114,34 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
             };
 
             string expectedSettingsContentFile = @"{
-  ""source"": {
-    ""autoUpdateIntervalInMinutes"": 5
-  },
-  ""visual"": {
-    ""progressBar"": ""rainbow""
-  },
+  ""$schema"": ""https://aka.ms/winget-settings.schema.json"",
   ""installBehavior"": {
     ""preferences"": {
-      ""scope"": ""user"",
       ""locale"": [
         ""en-US"",
         ""es-MX""
-      ]
+      ],
+      ""scope"": ""user""
     }
+  },
+  ""source"": {
+    ""autoUpdateIntervalInMinutes"": 5
   },
   ""telemetry"": {
     ""disable"": true
   },
-  ""$schema"": ""https://aka.ms/winget-settings.schema.json""
+  ""visual"": {
+    ""progressBar"": ""rainbow""
+  }
 }";
 
             var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Full, userSettingsFile);
 
             userSettings.Set();
 
-            Assert.Equal(expectedSettingsContentFile, File.ReadAllText(userSettingsFile));
+            var result = File.ReadAllText(userSettingsFile);
+            this.log.WriteLine(result);
+            Assert.Equal(expectedSettingsContentFile, result);
         }
 
         /// <summary>
@@ -189,32 +192,34 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
             };
 
             string expectedSettingsContentFile = @"{
-  ""source"": {
-    ""autoUpdateIntervalInMinutes"": 5
-  },
-  ""visual"": {
-    ""progressBar"": ""rainbow""
-  },
+  ""$schema"": ""https://aka.ms/winget-settings.schema.json"",
   ""installBehavior"": {
     ""preferences"": {
-      ""scope"": ""user"",
       ""locale"": [
         ""en-US"",
         ""es-MX""
-      ]
+      ],
+      ""scope"": ""user""
     }
+  },
+  ""source"": {
+    ""autoUpdateIntervalInMinutes"": 5
   },
   ""telemetry"": {
     ""disable"": true
   },
-  ""$schema"": ""https://aka.ms/winget-settings.schema.json""
+  ""visual"": {
+    ""progressBar"": ""rainbow""
+  }
 }";
 
             var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Full, userSettingsFile);
 
             userSettings.Set();
 
-            Assert.Equal(expectedSettingsContentFile, File.ReadAllText(userSettingsFile));
+            var result = File.ReadAllText(userSettingsFile);
+            this.log.WriteLine(result);
+            Assert.Equal(expectedSettingsContentFile, result);
         }
 
         /// <summary>
@@ -248,7 +253,9 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
 
             userSettings.Set();
 
-            Assert.Equal(existingContentFile, File.ReadAllText(userSettingsFile));
+            var result = File.ReadAllText(userSettingsFile);
+            this.log.WriteLine(result);
+            Assert.Equal(existingContentFile, result);
         }
 
         /// <summary>
@@ -300,6 +307,15 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
 
             string expectedSettingsContentFile = @"{
   ""$schema"": ""https://aka.ms/winget-settings.schema.json"",
+  ""installBehavior"": {
+    ""preferences"": {
+      ""locale"": [
+        ""en-US"",
+        ""es-MX""
+      ],
+      ""scope"": ""user""
+    }
+  },
   ""logging"": {
     ""level"": [
       ""verbose"",
@@ -312,20 +328,11 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
   ""source"": {
     ""autoUpdateIntervalInMinutes"": 5
   },
-  ""visual"": {
-    ""progressBar"": ""rainbow""
-  },
-  ""installBehavior"": {
-    ""preferences"": {
-      ""scope"": ""user"",
-      ""locale"": [
-        ""en-US"",
-        ""es-MX""
-      ]
-    }
-  },
   ""telemetry"": {
     ""disable"": true
+  },
+  ""visual"": {
+    ""progressBar"": ""rainbow""
   }
 }";
 
@@ -333,7 +340,9 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
 
             userSettings.Set();
 
-            Assert.Equal(expectedSettingsContentFile, File.ReadAllText(userSettingsFile));
+            var result = File.ReadAllText(userSettingsFile);
+            this.log.WriteLine(result);
+            Assert.Equal(expectedSettingsContentFile, result);
         }
 
         /// <summary>
@@ -398,15 +407,6 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
 
             string expectedSettingsContentFile = @"{
   ""$schema"": ""https://aka.ms/winget-settings.schema.json"",
-  ""logging"": {
-    ""level"": [
-      ""verbose"",
-      ""info"",
-      ""warning"",
-      ""error"",
-      ""critical""
-    ]
-  },
   ""installBehavior"": {
     ""preferences"": {
       ""locale"": [
@@ -417,11 +417,20 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
       ""scope"": ""user""
     }
   },
-  ""telemetry"": {
-    ""disable"": true
+  ""logging"": {
+    ""level"": [
+      ""verbose"",
+      ""info"",
+      ""warning"",
+      ""error"",
+      ""critical""
+    ]
   },
   ""source"": {
     ""autoUpdateIntervalInMinutes"": 5
+  },
+  ""telemetry"": {
+    ""disable"": true
   },
   ""visual"": {
     ""progressBar"": ""rainbow""
@@ -432,35 +441,577 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
 
             userSettings.Set();
 
-            Assert.Equal(expectedSettingsContentFile, File.ReadAllText(userSettingsFile));
+            var result = File.ReadAllText(userSettingsFile);
+            this.log.WriteLine(result);
+            Assert.Equal(expectedSettingsContentFile, result);
         }
 
-        /*
+        /// <summary>
+        /// Tests UserSettings Test method Full. Settings are equal.
+        /// </summary>
         [Fact]
         public void UserSettings_Test_Full_Equal()
         {
+            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
+
+            string existingContentFile = @"{
+  ""installBehavior"": {
+    ""preferences"": {
+      ""scope"": ""user"",
+      ""locale"": [
+        ""en-US"",
+        ""es-MX"",
+      ]
+    }
+  },
+  ""telemetry"": {
+    ""disable"": false
+  },
+  ""visual"": {
+    ""progressBar"": ""rainbow""
+  },
+  ""source"": {
+    ""autoUpdateIntervalInMinutes"": 5
+  }
+}";
+
+            File.WriteAllText(userSettingsFile, existingContentFile);
+
+            var inputSettings = new
+            {
+                source = new
+                {
+                    autoUpdateIntervalInMinutes = 5,
+                },
+                visual = new
+                {
+                    progressBar = "rainbow",
+                },
+                installBehavior = new
+                {
+                    preferences = new
+                    {
+                        scope = "user",
+                        locale = new string[] { "en-US", "es-MX" },
+                    },
+                },
+                telemetry = new
+                {
+                    disable = false,
+                },
+            };
+
+            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Full, userSettingsFile);
+
+            Assert.True(userSettings.Test());
+        }
+
+        /// <summary>
+        /// Tests UserSettings Test method Full. Settings are not equal. Input contains more elements.
+        /// </summary>
+        [Fact]
+        public void UserSettings_Test_Full_NotEqual_MoreInputProperties()
+        {
+            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
+
+            string existingContentFile = @"{
+  ""$schema"": ""https://aka.ms/winget-settings.schema.json"",
+  ""installBehavior"": {
+    ""preferences"": {
+      ""scope"": ""user"",
+      ""locale"": [
+        ""en-US"",
+        ""es-MX"",
+      ]
+    }
+  },
+  ""visual"": {
+    ""progressBar"": ""rainbow""
+  },
+  ""source"": {
+    ""autoUpdateIntervalInMinutes"": 5
+  }
+}";
+
+            File.WriteAllText(userSettingsFile, existingContentFile);
+
+            var inputSettings = new
+            {
+                source = new
+                {
+                    autoUpdateIntervalInMinutes = 5,
+                },
+                visual = new
+                {
+                    progressBar = "rainbow",
+                },
+                installBehavior = new
+                {
+                    preferences = new
+                    {
+                        scope = "user",
+                        locale = new string[] { "en-US", "es-MX" },
+                    },
+                },
+                telemetry = new
+                {
+                    disable = false,
+                },
+            };
+
+            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Full, userSettingsFile);
+
+            Assert.False(userSettings.Test());
+        }
+
+        /// <summary>
+        /// Tests UserSettings Test method Full. Settings are not equal. Existing settings contains more elements.
+        /// </summary>
+        [Fact]
+        public void UserSettings_Test_Full_NotEqual_MoreSettingsProperties()
+        {
+            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
+
+            string existingContentFile = @"{
+  ""$schema"": ""https://aka.ms/winget-settings.schema.json"",
+  ""installBehavior"": {
+    ""preferences"": {
+      ""scope"": ""user"",
+      ""locale"": [
+        ""en-US"",
+        ""es-MX"",
+      ]
+    }
+  },
+  ""visual"": {
+    ""progressBar"": ""rainbow""
+  },
+  ""source"": {
+    ""autoUpdateIntervalInMinutes"": 5
+  }
+}";
+
+            File.WriteAllText(userSettingsFile, existingContentFile);
+
+            var inputSettings = new
+            {
+                source = new
+                {
+                    autoUpdateIntervalInMinutes = 5,
+                },
+                visual = new
+                {
+                    progressBar = "rainbow",
+                },
+                installBehavior = new
+                {
+                    preferences = new
+                    {
+                        locale = new string[] { "en-US", "es-MX" },
+                    },
+                },
+                telemetry = new
+                {
+                    disable = false,
+                },
+            };
+
+            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Full, userSettingsFile);
+
+            Assert.False(userSettings.Test());
+        }
+
+        /// <summary>
+        /// Tests UserSettings Test method Full. Settings are equal. Existing has no schema element, input does.
+        /// </summary>
+        [Fact]
+        public void UserSettings_Test_Full_Equal_ExistingNoSchema()
+        {
+            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
+
+            string existingContentFile = @"{
+  ""source"": {
+    ""autoUpdateIntervalInMinutes"": 5
+  }
+}";
+
+            File.WriteAllText(userSettingsFile, existingContentFile);
+
+            // Hand roll it.
+            var inputSettings = new JObject();
+
+            var source = new JObject();
+            source.Add("autoUpdateIntervalInMinutes", 5);
+
+            inputSettings.Add("$schema", "https://aka.ms/winget-settings.schema.json");
+            inputSettings.Add("source", source);
+
+            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Full, userSettingsFile);
+
+            Assert.True(userSettings.Test());
+        }
+
+        /// <summary>
+        /// Tests UserSettings Test method Full. Settings are equal. Existing has schema element, input does not.
+        /// </summary>
+        [Fact]
+        public void UserSettings_Test_Full_Equal_InputNoSchema()
+        {
+            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
+
+            string existingContentFile = @"{
+  ""$schema"": ""https://aka.ms/winget-settings.schema.json"",
+  ""installBehavior"": {
+    ""preferences"": {
+      ""scope"": ""user"",
+      ""locale"": [
+        ""en-US"",
+        ""es-MX"",
+      ]
+    }
+  },
+  ""telemetry"": {
+    ""disable"": false
+  },
+  ""visual"": {
+    ""progressBar"": ""rainbow""
+  },
+  ""source"": {
+    ""autoUpdateIntervalInMinutes"": 5
+  }
+}";
+
+            File.WriteAllText(userSettingsFile, existingContentFile);
+
+            var inputSettings = new
+            {
+                source = new
+                {
+                    autoUpdateIntervalInMinutes = 5,
+                },
+                visual = new
+                {
+                    progressBar = "rainbow",
+                },
+                installBehavior = new
+                {
+                    preferences = new
+                    {
+                        scope = "user",
+                        locale = new string[] { "en-US", "es-MX" },
+                    },
+                },
+                telemetry = new
+                {
+                    disable = false,
+                },
+            };
+
+            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Full, userSettingsFile);
+
+            Assert.True(userSettings.Test());
+        }
+
+        /// <summary>
+        /// Tests UserSettings Test method Full. Settings are equal.
+        /// </summary>
+        [Fact]
+        public void UserSettings_Test_Full_NotEqual_DifferentValues()
+        {
+            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
+
+            string existingContentFile = @"{
+  ""installBehavior"": {
+    ""preferences"": {
+      ""scope"": ""user"",
+      ""locale"": [
+        ""en-US"",
+        ""es-MX"",
+      ]
+    }
+  },
+  ""telemetry"": {
+    ""disable"": false
+  },
+  ""visual"": {
+    ""progressBar"": ""rainbow""
+  },
+  ""source"": {
+    ""autoUpdateIntervalInMinutes"": 5
+  }
+}";
+
+            File.WriteAllText(userSettingsFile, existingContentFile);
+
+            var inputSettings = new
+            {
+                source = new
+                {
+                    autoUpdateIntervalInMinutes = 5,
+                },
+                visual = new
+                {
+                    progressBar = "retro",
+                },
+                installBehavior = new
+                {
+                    preferences = new
+                    {
+                        scope = "user",
+                        locale = new string[] { "en-US", "es-MX" },
+                    },
+                },
+                telemetry = new
+                {
+                    disable = false,
+                },
+            };
+
+            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Full, userSettingsFile);
+
+            Assert.False(userSettings.Test());
         }
 
         [Fact]
-        public void UserSettings_Test_Full_NotEqual()
+        public void UserSettings_Test_Partial_Equal_ContainsAll()
         {
+            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
+
+            string existingContentFile = @"{
+  ""installBehavior"": {
+    ""preferences"": {
+      ""scope"": ""user"",
+      ""locale"": [
+        ""en-US"",
+        ""es-MX"",
+      ]
+    }
+  },
+  ""telemetry"": {
+    ""disable"": false
+  },
+  ""visual"": {
+    ""progressBar"": ""retro""
+  },
+  ""source"": {
+    ""autoUpdateIntervalInMinutes"": 5
+  }
+}";
+
+            File.WriteAllText(userSettingsFile, existingContentFile);
+
+            var inputSettings = new
+            {
+                source = new
+                {
+                    autoUpdateIntervalInMinutes = 5,
+                },
+                visual = new
+                {
+                    progressBar = "retro",
+                },
+                installBehavior = new
+                {
+                    preferences = new
+                    {
+                        scope = "user",
+                        locale = new string[] { "en-US", "es-MX" },
+                    },
+                },
+                telemetry = new
+                {
+                    disable = false,
+                },
+            };
+
+            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Full, userSettingsFile);
+
+            Assert.True(userSettings.Test());
         }
 
         [Fact]
-        public void UserSettings_Test_Partial_Equal()
+        public void UserSettings_Test_Partial_Equal_InputContainsLess()
         {
+            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
+
+            string existingContentFile = @"{
+  ""installBehavior"": {
+    ""preferences"": {
+      ""scope"": ""user"",
+      ""locale"": [
+        ""en-US"",
+        ""es-MX"",
+      ]
+    }
+  },
+  ""telemetry"": {
+    ""disable"": false
+  },
+  ""visual"": {
+    ""progressBar"": ""rainbow""
+  },
+  ""source"": {
+    ""autoUpdateIntervalInMinutes"": 5
+  }
+}";
+
+            File.WriteAllText(userSettingsFile, existingContentFile);
+
+            var inputSettings = new
+            {
+                source = new
+                {
+                    autoUpdateIntervalInMinutes = 5,
+                },
+                installBehavior = new
+                {
+                    preferences = new
+                    {
+                        scope = "user",
+                        locale = new string[] { "en-US", "es-MX" },
+                    },
+                },
+                telemetry = new
+                {
+                    disable = false,
+                },
+            };
+
+            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Partial, userSettingsFile);
+
+            Assert.True(userSettings.Test());
         }
 
         [Fact]
-        public void UserSettings_Test_Partial_NotEqual()
+        public void UserSettings_Test_Partial_NotEqual_InputContainsMore()
         {
+            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
+
+            string existingContentFile = @"{
+  ""installBehavior"": {
+    ""preferences"": {
+      ""scope"": ""user"",
+      ""locale"": [
+        ""en-US"",
+        ""es-MX"",
+      ]
+    }
+  },
+  ""visual"": {
+    ""progressBar"": ""retro""
+  },
+  ""source"": {
+    ""autoUpdateIntervalInMinutes"": 5
+  }
+}";
+
+            File.WriteAllText(userSettingsFile, existingContentFile);
+
+            var inputSettings = new
+            {
+                source = new
+                {
+                    autoUpdateIntervalInMinutes = 5,
+                },
+                visual = new
+                {
+                    progressBar = "retro",
+                },
+                installBehavior = new
+                {
+                    preferences = new
+                    {
+                        scope = "user",
+                        locale = new string[] { "en-US", "es-MX" },
+                    },
+                },
+                telemetry = new
+                {
+                    disable = false,
+                },
+            };
+
+            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Partial, userSettingsFile);
+
+            Assert.False(userSettings.Test());
         }
 
+        [Fact]
+        public void UserSettings_Test_Partial_NotEqual_DifferentValues()
+        {
+            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
+
+            string existingContentFile = @"{
+  ""installBehavior"": {
+    ""preferences"": {
+      ""scope"": ""user"",
+      ""locale"": [
+        ""en-US"",
+        ""es-MX"",
+      ]
+    }
+  },
+  ""telemetry"": {
+    ""disable"": false
+  },
+  ""visual"": {
+    ""progressBar"": ""rainbow""
+  },
+  ""source"": {
+    ""autoUpdateIntervalInMinutes"": 5
+  }
+}";
+
+            File.WriteAllText(userSettingsFile, existingContentFile);
+
+            var inputSettings = new
+            {
+                source = new
+                {
+                    autoUpdateIntervalInMinutes = 5,
+                },
+                visual = new
+                {
+                    progressBar = "retro",
+                },
+                installBehavior = new
+                {
+                    preferences = new
+                    {
+                        scope = "user",
+                        locale = new string[] { "en-US", "es-MX" },
+                    },
+                },
+                telemetry = new
+                {
+                    disable = false,
+                },
+            };
+
+            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Partial, userSettingsFile);
+
+            Assert.False(userSettings.Test());
+        }
+
+        /// <summary>
+        /// Test UserSetting Get.
+        /// </summary>
         [Fact]
         public void UserSettings_Get()
         {
-            // not null?
+            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
+            var inputSettings = new
+            {
+                source = new
+                {
+                    autoUpdateIntervalInMinutes = 5,
+                },
+            };
+
+            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Partial, userSettingsFile);
+
+            var newUserSettings = userSettings.Get();
+            Assert.NotNull(newUserSettings);
         }
-        */
     }
 }
