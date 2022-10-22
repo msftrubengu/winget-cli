@@ -25,33 +25,24 @@ param (
     [string]
     $Configuration,
 
-    [Parameter(Mandatory, ParameterSetName = 'Core')]
-    [string]
-    $CoreFramework,
-
-    [Parameter(Mandatory, ParameterSetName = 'Desktop')]
-    [string]
-    $DesktopFramework,
-
     [Parameter(Mandatory)]
     [string]
     $OutDir
 )
 
-switch ($PSCmdlet.ParameterSetName) {
-    'Core' {
-        $frameworkFolderName = 'Core'
-        $framework = $CoreFramework
-        break
-    }
-    'Desktop' {
-        $frameworkFolderName = 'Desktop'
-        $framework = $DesktopFramework
-        break
-    }
-}
+# src\x64\Release\Project\net461\Library.Desktop.dll
+# src\x64\Release\Project\net6.0-windows10.0.22000.0\Library.Core.dll
 
+# build\Module\x64\Desktop\Library.Desktop.dll
+# build\Module\x64\Core\Library.Core.dll
+
+$CoreFramework = 'net6.0-windows10.0.22000.0'
+$CoreFolderName = 'Core'
+$DesktopFramework = 'net461'
+$DesktopFolderName = 'Desktop'
 $ProjectName = 'Microsoft.WinGet.Client'
-Copy-Item "$PSScriptRoot\..\..\..\$Platform\$Configuration\$ProjectName\$framework" "$OutDir\$Platform\$frameworkFolderName" -Force -Recurse -ErrorAction Stop
+
+Copy-Item "$PSScriptRoot\..\..\$Platform\$Configuration\$ProjectName\$CoreFramework" "$OutDir\$Platform\$CoreFolderName" -Force -Recurse -ErrorAction Stop
+Copy-Item "$PSScriptRoot\..\..\$Platform\$Configuration\$ProjectName\$DesktopFramework" "$OutDir\$Platform\$DesktopFolderName" -Force -Recurse -ErrorAction Stop
 
 Write-Host 'Done!' -ForegroundColor Green

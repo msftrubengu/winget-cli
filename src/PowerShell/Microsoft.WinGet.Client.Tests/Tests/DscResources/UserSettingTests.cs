@@ -992,26 +992,5 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
 
             Assert.False(userSettings.Test());
         }
-
-        /// <summary>
-        /// Test UserSetting Get.
-        /// </summary>
-        [Fact]
-        public void UserSettings_Get()
-        {
-            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
-            var inputSettings = new
-            {
-                source = new
-                {
-                    autoUpdateIntervalInMinutes = 5,
-                },
-            };
-
-            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Partial, userSettingsFile);
-
-            var newUserSettings = userSettings.Get();
-            Assert.NotNull(newUserSettings);
-        }
     }
 }

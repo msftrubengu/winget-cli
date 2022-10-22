@@ -18,7 +18,7 @@ namespace Microsoft.WinGet.Client.DscResouces
     /// </summary>
     public class UserSettings
     {
-        private const string UserSettingsLocation = @"%LocalAppData%\Packages\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe\LocalState\settings.json";
+        private const string WinGetSettingsFilePath = @"%LocalAppData%\Packages\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe\LocalState\settings.json";
         private const string SchemaKey = "$schema";
         private const string SchemaValue = "https://aka.ms/winget-settings.schema.json";
 
@@ -30,8 +30,8 @@ namespace Microsoft.WinGet.Client.DscResouces
         /// </summary>
         /// <param name="settings">Settings object.</param>
         /// <param name="resourceMode">Resource mode.</param>
-        public UserSettings(object settings, ResourceMode resourceMode = ResourceMode.Full)
-            : this(settings, resourceMode, Environment.ExpandEnvironmentVariables(UserSettingsLocation))
+        public UserSettings(object settings, ResourceMode resourceMode)
+            : this(settings, resourceMode, UserSettings.GetWinGetSettingsFilePath())
         {
         }
 
@@ -78,12 +78,12 @@ namespace Microsoft.WinGet.Client.DscResouces
         public ResourceMode Mode { get; private set; }
 
         /// <summary>
-        /// Retrieves the state of the resource the user settings resource.
+        /// Gets the full path of the winget settings file.
         /// </summary>
-        /// <returns>Source.</returns>
-        public UserSettings Get()
+        /// <returns>Settings file full path.</returns>
+        public static string GetWinGetSettingsFilePath()
         {
-            return new UserSettings(this.Settings, this.Mode, this.userFileSettingsPath);
+            return Environment.ExpandEnvironmentVariables(WinGetSettingsFilePath);
         }
 
         /// <summary>
@@ -126,8 +126,7 @@ namespace Microsoft.WinGet.Client.DscResouces
             {
                 var fileSettings = this.ConvertSettingsFileToJObject();
 
-                // To make the input setting to triumph, they have to be merged into the existing
-                // JObject.
+                // To make the input setting to triumph, they have to be merged into the existing JObject.
                 fileSettings.Merge(jObject, new JsonMergeSettings
                 {
                     MergeArrayHandling = MergeArrayHandling.Union,

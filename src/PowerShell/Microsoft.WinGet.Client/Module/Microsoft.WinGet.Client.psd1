@@ -54,7 +54,13 @@ PowerShellVersion = '5.1.0'
 # RequiredModules = @()
 
 # Assemblies that must be loaded prior to importing this module
-# RequiredAssemblies = @()
+RequiredAssemblies = if ($env:PROCESSOR_ARCHITECTURE -like 'amd64') {
+    "x64\$PSEdition\Microsoft.WinGet.Client.dll"
+}
+else {
+    "x86\$PSEdition\Microsoft.WinGet.Client.dll"
+}
+
 
 # Script files (.ps1) that are run in the caller's environment prior to importing this module.
 # ScriptsToProcess = @()
