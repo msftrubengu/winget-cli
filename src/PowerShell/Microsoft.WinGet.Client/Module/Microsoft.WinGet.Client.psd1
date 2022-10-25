@@ -72,12 +72,12 @@ else {
 FormatsToProcess = 'Format.ps1xml'
 
 # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-NestedModules = if ($env:PROCESSOR_ARCHITECTURE -like 'amd64') {
-    "x64\$PSEdition\Microsoft.WinGet.Client.dll"
-}
-else {
-    "x86\$PSEdition\Microsoft.WinGet.Client.dll"
-}
+#NestedModules = if ($env:PROCESSOR_ARCHITECTURE -like 'amd64') {
+#    "x64\$PSEdition\Microsoft.WinGet.Client.dll"
+#}
+#else {
+#    "x86\$PSEdition\Microsoft.WinGet.Client.dll"
+#}
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
 FunctionsToExport = @(
@@ -89,9 +89,6 @@ FunctionsToExport = @(
     'Reset-WinGetSource'
 )
 
-# DSC resources to export from this module
-DscResourcesToExport = @('UserSettings')
-
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 #CmdletsToExport = @(
 #    'Find-WinGetPackage',
@@ -101,12 +98,15 @@ DscResourcesToExport = @('UserSettings')
 #    'Uninstall-WinGetPackage',
 #    'Update-WinGetPackage'
 #)
-#
+
 # Variables to export from this module
 # VariablesToExport = @()
 
 # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
 AliasesToExport = @()
+
+# DSC resources to export from this module
+DscResourcesToExport = @('UserSettings')
 
 # List of all modules packaged with this module
 # ModuleList = @()

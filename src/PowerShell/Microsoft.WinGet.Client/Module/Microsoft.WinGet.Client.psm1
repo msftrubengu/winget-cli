@@ -34,26 +34,28 @@ class UserSettings
 
     [UserSettings] Get()
     {
-        $settingsPath = [Microsoft.WinGet.Client.DscResouces.UserSettings]::GetWinGetSettingsFilePath
-        $settingsObj = Get-Content $settingsPath | Out-String | ConvertFrom-Json
+        $settingsPath = [Microsoft.WinGet.Client.DscResouces.UserSettings]::GetWinGetSettingsFilePath()
+        $userSettingsObj = New-Object Microsoft.WinGet.Client.DscResouces.UserSettings($settingsPath, $this.Overwrite)
+
         $s = Get-UserSid
         $result = @{
             SID = $s
-            Settings = $settingsObj
+            Settings = $userSettingsObj.Settings
+            Overwrite = $this.Overwrite
         }
         return $result
     }
 
     [bool] Test()
     {
-        $settingsPath = [Microsoft.WinGet.Client.DscResouces.UserSettings]::GetWinGetSettingsFilePath
+        $settingsPath = [Microsoft.WinGet.Client.DscResouces.UserSettings]::GetWinGetSettingsFilePath()
         $userSettingsObj = New-Object Microsoft.WinGet.Client.DscResouces.UserSettings($this.Settings, $settingsPath, $this.Overwrite)
         return $userSettingsObj.Test()
     }
 
     [void] Set()
     {
-        $settingsPath = [Microsoft.WinGet.Client.DscResouces.UserSettings]::GetWinGetSettingsFilePath
+        $settingsPath = [Microsoft.WinGet.Client.DscResouces.UserSettings]::GetWinGetSettingsFilePath()
         $userSettingsObj = New-Object Microsoft.WinGet.Client.DscResouces.UserSettings($this.Settings, $settingsPath, $this.Overwrite)
         $userSettingsObj.Set()
     }
