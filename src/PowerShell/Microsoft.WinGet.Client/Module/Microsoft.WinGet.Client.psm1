@@ -1,9 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-# Copyright (c) Microsoft Corporation. All rights reserved.
-# Licensed under the MIT License.
-
 try
 {
     # Load all non-test .ps1 files in the script's directory.
@@ -20,4 +17,49 @@ try
     {
         Write-Host $e.Message -ForegroundColor Red -BackgroundColor Black
     }
+}
+
+[DSCResource()]
+class UserSettings
+{
+    # Do not set.
+    [DscProperty(Key)]
+    [string]$SID
+
+    [DscProperty(Mandatory)]
+    [Hashtable]$Settings
+
+    [DscProperty()]
+    [bool]$Overwrite = $false
+
+    [UserSettings] Get()
+    {
+        $settingsPath = [Microsoft.WinGet.Client.DscResouces.UserSettings]::GetWinGetSettingsFilePath
+        $settingsObj = Get-Content $settingsPath | Out-String | ConvertFrom-Json
+        $s = Get-UserSid
+        $result = @{
+            SID = $s
+            Settings = $settingsObj
+        }
+        return $result
+    }
+
+    [bool] Test()
+    {
+        $settingsPath = [Microsoft.WinGet.Client.DscResouces.UserSettings]::GetWinGetSettingsFilePath
+        $userSettingsObj = New-Object Microsoft.WinGet.Client.DscResouces.UserSettings($this.Settings, $settingsPath, $this.Overwrite)
+        return $userSettingsObj.Test()
+    }
+
+    [void] Set()
+    {
+        $settingsPath = [Microsoft.WinGet.Client.DscResouces.UserSettings]::GetWinGetSettingsFilePath
+        $userSettingsObj = New-Object Microsoft.WinGet.Client.DscResouces.UserSettings($this.Settings, $settingsPath, $this.Overwrite)
+        $userSettingsObj.Set()
+    }
+}
+
+function Get-UserSid
+{
+    return (whoami /user /FO csv | ConvertFrom-Csv).SID
 }

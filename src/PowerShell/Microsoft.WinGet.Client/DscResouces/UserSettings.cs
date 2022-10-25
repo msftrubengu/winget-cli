@@ -7,6 +7,7 @@
 namespace Microsoft.WinGet.Client.DscResouces
 {
     using System;
+    using System.Collections;
     using System.IO;
     using System.Linq;
     using Microsoft.WinGet.Client.Exceptions;
@@ -23,16 +24,16 @@ namespace Microsoft.WinGet.Client.DscResouces
         private const string SchemaValue = "https://aka.ms/winget-settings.schema.json";
 
         private readonly string userFileSettingsPath;
-        private readonly JObject jsonSettings;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UserSettings"/> class.
         /// </summary>
-        /// <param name="settings">Settings object.</param>
-        /// <param name="resourceMode">Resource mode.</param>
-        public UserSettings(object settings, ResourceMode resourceMode)
-            : this(settings, resourceMode, UserSettings.GetWinGetSettingsFilePath())
+        /// <param name="userFileSettingsPath">File settings path.</param>
+        /// <param name="overwrite">Should overwrite settings file or not.</param>
+        public UserSettings(string userFileSettingsPath, bool overwrite = false)
         {
+            this.userFileSettingsPath = userFileSettingsPath;
+            this.Overwrite = overwrite;
         }
 
         /// <summary>
@@ -40,42 +41,23 @@ namespace Microsoft.WinGet.Client.DscResouces
         /// Used for testing.
         /// </summary>
         /// <param name="settings">Settings object.</param>
-        /// <param name="resourceMode">Resource mode.</param>
         /// <param name="userFileSettingsPath">File settings path.</param>
-        internal UserSettings(object settings, ResourceMode resourceMode, string userFileSettingsPath)
+        /// <param name="overwrite">Should overwrite settings file or not.</param>
+        public UserSettings(Hashtable settings, string userFileSettingsPath, bool overwrite = false)
+            : this(userFileSettingsPath, overwrite)
         {
             this.Settings = settings ?? throw new ArgumentNullException(nameof(settings));
-            this.jsonSettings = (JObject)JToken.FromObject(this.Settings);
-
-            this.userFileSettingsPath = userFileSettingsPath;
-            this.Mode = resourceMode;
-        }
-
-        /// <summary>
-        /// Resource mode.
-        /// </summary>
-        public enum ResourceMode
-        {
-            /// <summary>
-            /// Deletes previous settings and apply only the specified.
-            /// </summary>
-            Full,
-
-            /// <summary>
-            /// Appends configuration to previous user settings file. Overrites existing values.
-            /// </summary>
-            Partial,
         }
 
         /// <summary>
         /// Gets the settings of this resource.
         /// </summary>
-        public object Settings { get; private set; }
+        public Hashtable Settings { get; private set; }
 
         /// <summary>
-        /// Gets the resource mode.
+        /// Gets a value indicating whether gets the overwrite value.
         /// </summary>
-        public ResourceMode Mode { get; private set; }
+        public bool Overwrite { get; private set; }
 
         /// <summary>
         /// Gets the full path of the winget settings file.
@@ -87,13 +69,24 @@ namespace Microsoft.WinGet.Client.DscResouces
         }
 
         /// <summary>
+        /// Gets the user settings.
+        /// </summary>
+        /// <returns>UserSettings.</returns>
+        public UserSettings Get()
+        {
+            return new UserSettings(
+                this.ConvertSettingsFileToHashtable(),
+                this.userFileSettingsPath);
+        }
+
+        /// <summary>
         /// Determines if the user settings node is currently compliant with the resource's desired state.
         /// </summary>
         /// <returns>True if compliant.</returns>
         public bool Test()
         {
             var fileSettings = this.ConvertSettingsFileToJObject();
-            var jObject = (JObject)this.jsonSettings.DeepClone();
+            var jObject = this.GetJObject();
 
             // Don't fail because of the schema.
             if (fileSettings.ContainsKey(SchemaKey))
@@ -106,12 +99,12 @@ namespace Microsoft.WinGet.Client.DscResouces
                 jObject.Remove(SchemaKey);
             }
 
-            if (this.Mode == ResourceMode.Partial)
+            if (this.Overwrite)
             {
-                return this.PartialCompare(jObject, fileSettings);
+                return JToken.DeepEquals(jObject, fileSettings);
             }
 
-            return JToken.DeepEquals(jObject, fileSettings);
+            return this.PartialCompare(jObject, fileSettings);
         }
 
         /// <summary>
@@ -119,10 +112,10 @@ namespace Microsoft.WinGet.Client.DscResouces
         /// </summary>
         public void Set()
         {
-            var jObject = (JObject)this.jsonSettings.DeepClone();
+            var jObject = this.GetJObject();
 
             // Merge settings.
-            if (this.Mode == ResourceMode.Partial)
+            if (!this.Overwrite)
             {
                 var fileSettings = this.ConvertSettingsFileToJObject();
 
@@ -149,6 +142,11 @@ namespace Microsoft.WinGet.Client.DscResouces
                 json);
         }
 
+        private JObject GetJObject()
+        {
+            return (JObject)JToken.FromObject(this.Settings);
+        }
+
         private JObject ConvertSettingsFileToJObject()
         {
             if (!File.Exists(this.userFileSettingsPath))
@@ -157,6 +155,16 @@ namespace Microsoft.WinGet.Client.DscResouces
             }
 
             return JObject.Parse(File.ReadAllText(this.userFileSettingsPath));
+        }
+
+        private Hashtable ConvertSettingsFileToHashtable()
+        {
+            if (!File.Exists(this.userFileSettingsPath))
+            {
+                return new Hashtable();
+            }
+
+            return JsonConvert.DeserializeObject<Hashtable>(File.ReadAllText(this.userFileSettingsPath));
         }
 
         /// <summary>

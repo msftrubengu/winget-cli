@@ -83,13 +83,10 @@
   <!-- Build Microsoft.Winget.Client PowerShell Module -->
   <Target Name="CopyModuleFiles" AfterTargets="AfterBuild">
     <ItemGroup>
-      <ModuleFiles Include="$(ProjectDir)\Module\**\*.*"/>
+      <ModuleFiles Include="$(ProjectDir)\Module\**\*.*" />
     </ItemGroup>
     <Message Importance="high" Text="Copying PowerShell module files to '$(PowerShellModuleOutputDirectory)'" />
-    <Copy
-        SourceFiles="@(ModuleFiles)"
-        DestinationFiles="$(PowerShellModuleOutputDirectory)\%(RecursiveDir)%(Filename)%(Extension)"
-        />
+    <Copy SourceFiles="@(ModuleFiles)" DestinationFiles="$(PowerShellModuleOutputDirectory)\%(RecursiveDir)%(Filename)%(Extension)" />
   </Target>
     
   <Target Name="CopyCoreBinaries" AfterTargets="AfterBuild" Condition="'$(TargetFramework)' == '$(CoreFramework)'">

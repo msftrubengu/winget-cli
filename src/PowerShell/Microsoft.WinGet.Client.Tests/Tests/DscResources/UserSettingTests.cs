@@ -7,6 +7,7 @@
 namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
 {
     using System;
+    using System.Collections;
     using System.IO;
     using Microsoft.WinGet.Client.DscResouces;
     using Newtonsoft.Json.Linq;
@@ -48,11 +49,9 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
         {
             var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
 
-            var inputSettings = new
-            {
-            };
+            var inputSettings = new Hashtable();
 
-            _ = new UserSettings(inputSettings, UserSettings.ResourceMode.Full, userSettingsFile);
+            _ = new UserSettings(inputSettings, userSettingsFile, true);
         }
 
         /// <summary>
@@ -63,22 +62,7 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
         {
             var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
             Assert.Throws<ArgumentNullException>(
-                () => _ = new UserSettings(null, UserSettings.ResourceMode.Full, userSettingsFile));
-        }
-
-        /// <summary>
-        /// Tests bad input.
-        /// </summary>
-        /// <param name="input">Bad input</param>
-        [Theory]
-        [InlineData(5)]
-        [InlineData("data")]
-        public void UserSettings_BadInput(object input)
-        {
-            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
-
-            Assert.Throws<InvalidCastException>(
-                () => _ = new UserSettings(input, UserSettings.ResourceMode.Full, userSettingsFile));
+                () => _ = new UserSettings(null, userSettingsFile, true));
         }
 
         /// <summary>
@@ -89,27 +73,57 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
         {
             var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
 
-            var inputSettings = new
+            var inputSettings = new Hashtable()
             {
-                source = new
                 {
-                    autoUpdateIntervalInMinutes = 5,
-                },
-                visual = new
-                {
-                    progressBar = "rainbow",
-                },
-                installBehavior = new
-                {
-                    preferences = new
+                    "source",
+                    new Hashtable()
                     {
-                        scope = "user",
-                        locale = new string[] { "en-US", "es-MX" },
-                    },
+                        {
+                            "autoUpdateIntervalInMinutes",
+                            5
+                        },
+                    }
                 },
-                telemetry = new
                 {
-                    disable = true,
+                    "visual",
+                    new Hashtable()
+                    {
+                        {
+                            "progressBar",
+                            "rainbow"
+                        },
+                    }
+                },
+                {
+                    "installBehavior",
+                    new Hashtable()
+                    {
+                        {
+                            "preferences",
+                            new Hashtable()
+                            {
+                                {
+                                    "scope",
+                                    "user"
+                                },
+                                {
+                                    "locale",
+                                    new string[] { "en-US", "es-MX" }
+                                },
+                            }
+                        },
+                    }
+                },
+                {
+                    "telemetry",
+                    new Hashtable()
+                    {
+                        {
+                            "disable",
+                            true
+                        },
+                    }
                 },
             };
 
@@ -135,7 +149,7 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
   }
 }";
 
-            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Full, userSettingsFile);
+            var userSettings = new UserSettings(inputSettings, userSettingsFile, true);
 
             userSettings.Set();
 
@@ -148,10 +162,8 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
         /// Tests Set when a settings file already exists. Must overrite it.
         /// </summary>
         [Fact]
-        public void UserSettings_Set_Full_ExistingFile()
+        public void UserSettings_Set_Overwrite_ExistingFile()
         {
-            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
-
             string existingContentFile = @"{
   ""$schema"": ""https://aka.ms/winget-settings.schema.json"",
   ""logging"": {
@@ -164,30 +176,59 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
     ]
   },
 }";
+            var userSettingsFile = this.SetUpSettingsFile(existingContentFile);
 
-            File.WriteAllText(userSettingsFile, existingContentFile);
-
-            var inputSettings = new
+            var inputSettings = new Hashtable()
             {
-                source = new
                 {
-                    autoUpdateIntervalInMinutes = 5,
-                },
-                visual = new
-                {
-                    progressBar = "rainbow",
-                },
-                installBehavior = new
-                {
-                    preferences = new
+                    "source",
+                    new Hashtable()
                     {
-                        scope = "user",
-                        locale = new string[] { "en-US", "es-MX" },
-                    },
+                        {
+                            "autoUpdateIntervalInMinutes",
+                            5
+                        },
+                    }
                 },
-                telemetry = new
                 {
-                    disable = true,
+                    "visual",
+                    new Hashtable()
+                    {
+                        {
+                            "progressBar",
+                            "rainbow"
+                        },
+                    }
+                },
+                {
+                    "installBehavior",
+                    new Hashtable()
+                    {
+                        {
+                            "preferences",
+                            new Hashtable()
+                            {
+                                {
+                                    "scope",
+                                    "user"
+                                },
+                                {
+                                    "locale",
+                                    new string[] { "en-US", "es-MX" }
+                                },
+                            }
+                        },
+                    }
+                },
+                {
+                    "telemetry",
+                    new Hashtable()
+                    {
+                        {
+                            "disable",
+                            true
+                        },
+                    }
                 },
             };
 
@@ -213,7 +254,7 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
   }
 }";
 
-            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Full, userSettingsFile);
+            var userSettings = new UserSettings(inputSettings, userSettingsFile, true);
 
             userSettings.Set();
 
@@ -228,8 +269,6 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
         [Fact]
         public void UserSettings_Set_Partial_EmptySettings()
         {
-            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
-
             string existingContentFile = @"{
   ""$schema"": ""https://aka.ms/winget-settings.schema.json"",
   ""logging"": {
@@ -242,14 +281,11 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
     ]
   }
 }";
+            var userSettingsFile = this.SetUpSettingsFile(existingContentFile);
 
-            File.WriteAllText(userSettingsFile, existingContentFile);
+            var inputSettings = new Hashtable();
 
-            var inputSettings = new
-            {
-            };
-
-            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Partial, userSettingsFile);
+            var userSettings = new UserSettings(inputSettings, userSettingsFile, false);
 
             userSettings.Set();
 
@@ -262,10 +298,8 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
         /// Tests Set with partial merge and no collisions.
         /// </summary>
         [Fact]
-        public void UserSettings_Set_Partial_Merge()
+        public void UserSettings_Set_Partial_Partial()
         {
-            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
-
             string existingContentFile = @"{
   ""$schema"": ""https://aka.ms/winget-settings.schema.json"",
   ""logging"": {
@@ -278,30 +312,59 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
     ]
   },
 }";
+            var userSettingsFile = this.SetUpSettingsFile(existingContentFile);
 
-            File.WriteAllText(userSettingsFile, existingContentFile);
-
-            var inputSettings = new
+            var inputSettings = new Hashtable()
             {
-                source = new
                 {
-                    autoUpdateIntervalInMinutes = 5,
-                },
-                visual = new
-                {
-                    progressBar = "rainbow",
-                },
-                installBehavior = new
-                {
-                    preferences = new
+                    "source",
+                    new Hashtable()
                     {
-                        scope = "user",
-                        locale = new string[] { "en-US", "es-MX" },
-                    },
+                        {
+                            "autoUpdateIntervalInMinutes",
+                            5
+                        },
+                    }
                 },
-                telemetry = new
                 {
-                    disable = true,
+                    "visual",
+                    new Hashtable()
+                    {
+                        {
+                            "progressBar",
+                            "rainbow"
+                        },
+                    }
+                },
+                {
+                    "installBehavior",
+                    new Hashtable()
+                    {
+                        {
+                            "preferences",
+                            new Hashtable()
+                            {
+                                {
+                                    "scope",
+                                    "user"
+                                },
+                                {
+                                    "locale",
+                                    new string[] { "en-US", "es-MX" }
+                                },
+                            }
+                        },
+                    }
+                },
+                {
+                    "telemetry",
+                    new Hashtable()
+                    {
+                        {
+                            "disable",
+                            true
+                        },
+                    }
                 },
             };
 
@@ -336,7 +399,7 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
   }
 }";
 
-            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Partial, userSettingsFile);
+            var userSettings = new UserSettings(inputSettings, userSettingsFile, false);
 
             userSettings.Set();
 
@@ -349,10 +412,8 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
         /// Tests Set with partial merge with collisions. Input must triumph.
         /// </summary>
         [Fact]
-        public void UserSettings_Set_Partial_MergeAndOverwrite()
+        public void UserSettings_Set_Partial_PartialAndOverwrite()
         {
-            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
-
             string existingContentFile = @"{
   ""$schema"": ""https://aka.ms/winget-settings.schema.json"",
   ""logging"": {
@@ -378,30 +439,59 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
     ""autoUpdateIntervalInMinutes"": 15
   },
 }";
+            var userSettingsFile = this.SetUpSettingsFile(existingContentFile);
 
-            File.WriteAllText(userSettingsFile, existingContentFile);
-
-            var inputSettings = new
+            var inputSettings = new Hashtable()
             {
-                source = new
                 {
-                    autoUpdateIntervalInMinutes = 5,
-                },
-                visual = new
-                {
-                    progressBar = "rainbow",
-                },
-                installBehavior = new
-                {
-                    preferences = new
+                    "source",
+                    new Hashtable()
                     {
-                        scope = "user",
-                        locale = new string[] { "en-US", "es-MX" },
-                    },
+                        {
+                            "autoUpdateIntervalInMinutes",
+                            5
+                        },
+                    }
                 },
-                telemetry = new
                 {
-                    disable = true,
+                    "visual",
+                    new Hashtable()
+                    {
+                        {
+                            "progressBar",
+                            "rainbow"
+                        },
+                    }
+                },
+                {
+                    "installBehavior",
+                    new Hashtable()
+                    {
+                        {
+                            "preferences",
+                            new Hashtable()
+                            {
+                                {
+                                    "scope",
+                                    "user"
+                                },
+                                {
+                                    "locale",
+                                    new string[] { "en-US", "es-MX" }
+                                },
+                            }
+                        },
+                    }
+                },
+                {
+                    "telemetry",
+                    new Hashtable()
+                    {
+                        {
+                            "disable",
+                            true
+                        },
+                    }
                 },
             };
 
@@ -437,7 +527,7 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
   }
 }";
 
-            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Partial, userSettingsFile);
+            var userSettings = new UserSettings(inputSettings, userSettingsFile, false);
 
             userSettings.Set();
 
@@ -447,13 +537,11 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
         }
 
         /// <summary>
-        /// Tests UserSettings Test method Full. Settings are equal.
+        /// Tests UserSettings Test method Overwrite. Settings are equal.
         /// </summary>
         [Fact]
-        public void UserSettings_Test_Full_Equal()
+        public void UserSettings_Test_Overwrite_Equal()
         {
-            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
-
             string existingContentFile = @"{
   ""installBehavior"": {
     ""preferences"": {
@@ -474,46 +562,73 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
     ""autoUpdateIntervalInMinutes"": 5
   }
 }";
+            var userSettingsFile = this.SetUpSettingsFile(existingContentFile);
 
-            File.WriteAllText(userSettingsFile, existingContentFile);
-
-            var inputSettings = new
+            var inputSettings = new Hashtable()
             {
-                source = new
                 {
-                    autoUpdateIntervalInMinutes = 5,
-                },
-                visual = new
-                {
-                    progressBar = "rainbow",
-                },
-                installBehavior = new
-                {
-                    preferences = new
+                    "source",
+                    new Hashtable()
                     {
-                        scope = "user",
-                        locale = new string[] { "en-US", "es-MX" },
-                    },
+                        {
+                            "autoUpdateIntervalInMinutes",
+                            5
+                        },
+                    }
                 },
-                telemetry = new
                 {
-                    disable = false,
+                    "visual",
+                    new Hashtable()
+                    {
+                        {
+                            "progressBar",
+                            "rainbow"
+                        },
+                    }
+                },
+                {
+                    "installBehavior",
+                    new Hashtable()
+                    {
+                        {
+                            "preferences",
+                            new Hashtable()
+                            {
+                                {
+                                    "scope",
+                                    "user"
+                                },
+                                {
+                                    "locale",
+                                    new string[] { "en-US", "es-MX" }
+                                },
+                            }
+                        },
+                    }
+                },
+                {
+                    "telemetry",
+                    new Hashtable()
+                    {
+                        {
+                            "disable",
+                            false
+                        },
+                    }
                 },
             };
 
-            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Full, userSettingsFile);
+            var userSettings = new UserSettings(inputSettings, userSettingsFile, true);
 
             Assert.True(userSettings.Test());
         }
 
         /// <summary>
-        /// Tests UserSettings Test method Full. Settings are not equal. Input contains more elements.
+        /// Tests UserSettings Test method Overwrite. Settings are not equal. Input contains more elements.
         /// </summary>
         [Fact]
-        public void UserSettings_Test_Full_NotEqual_MoreInputProperties()
+        public void UserSettings_Test_Overwrite_NotEqual_MoreInputProperties()
         {
-            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
-
             string existingContentFile = @"{
   ""$schema"": ""https://aka.ms/winget-settings.schema.json"",
   ""installBehavior"": {
@@ -532,46 +647,73 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
     ""autoUpdateIntervalInMinutes"": 5
   }
 }";
+            var userSettingsFile = this.SetUpSettingsFile(existingContentFile);
 
-            File.WriteAllText(userSettingsFile, existingContentFile);
-
-            var inputSettings = new
+            var inputSettings = new Hashtable()
             {
-                source = new
                 {
-                    autoUpdateIntervalInMinutes = 5,
-                },
-                visual = new
-                {
-                    progressBar = "rainbow",
-                },
-                installBehavior = new
-                {
-                    preferences = new
+                    "source",
+                    new Hashtable()
                     {
-                        scope = "user",
-                        locale = new string[] { "en-US", "es-MX" },
-                    },
+                        {
+                            "autoUpdateIntervalInMinutes",
+                            5
+                        },
+                    }
                 },
-                telemetry = new
                 {
-                    disable = false,
+                    "visual",
+                    new Hashtable()
+                    {
+                        {
+                            "progressBar",
+                            "rainbow"
+                        },
+                    }
+                },
+                {
+                    "installBehavior",
+                    new Hashtable()
+                    {
+                        {
+                            "preferences",
+                            new Hashtable()
+                            {
+                                {
+                                    "scope",
+                                    "user"
+                                },
+                                {
+                                    "locale",
+                                    new string[] { "en-US", "es-MX" }
+                                },
+                            }
+                        },
+                    }
+                },
+                {
+                    "telemetry",
+                    new Hashtable()
+                    {
+                        {
+                            "disable",
+                            false
+                        },
+                    }
                 },
             };
 
-            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Full, userSettingsFile);
+            var userSettings = new UserSettings(inputSettings, userSettingsFile, true);
 
             Assert.False(userSettings.Test());
         }
 
         /// <summary>
-        /// Tests UserSettings Test method Full. Settings are not equal. Existing settings contains more elements.
+        /// Tests UserSettings Test method Overwrite. Settings are not equal. Existing settings contains more elements.
         /// </summary>
         [Fact]
-        public void UserSettings_Test_Full_NotEqual_MoreSettingsProperties()
+        public void UserSettings_Test_Overwrite_NotEqual_MoreSettingsProperties()
         {
-            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
-
             string existingContentFile = @"{
   ""$schema"": ""https://aka.ms/winget-settings.schema.json"",
   ""installBehavior"": {
@@ -590,75 +732,105 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
     ""autoUpdateIntervalInMinutes"": 5
   }
 }";
+            var userSettingsFile = this.SetUpSettingsFile(existingContentFile);
 
-            File.WriteAllText(userSettingsFile, existingContentFile);
-
-            var inputSettings = new
+            var inputSettings = new Hashtable()
             {
-                source = new
                 {
-                    autoUpdateIntervalInMinutes = 5,
-                },
-                visual = new
-                {
-                    progressBar = "rainbow",
-                },
-                installBehavior = new
-                {
-                    preferences = new
+                    "source",
+                    new Hashtable()
                     {
-                        locale = new string[] { "en-US", "es-MX" },
-                    },
+                        {
+                            "autoUpdateIntervalInMinutes",
+                            5
+                        },
+                    }
                 },
-                telemetry = new
                 {
-                    disable = false,
+                    "visual",
+                    new Hashtable()
+                    {
+                        {
+                            "progressBar",
+                            "rainbow"
+                        },
+                    }
+                },
+                {
+                    "installBehavior",
+                    new Hashtable()
+                    {
+                        {
+                            "preferences",
+                            new Hashtable()
+                            {
+                                {
+                                    "locale",
+                                    new string[] { "en-US", "es-MX" }
+                                },
+                            }
+                        },
+                    }
+                },
+                {
+                    "telemetry",
+                    new Hashtable()
+                    {
+                        {
+                            "disable",
+                            false
+                        },
+                    }
                 },
             };
 
-            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Full, userSettingsFile);
+            var userSettings = new UserSettings(inputSettings, userSettingsFile, true);
 
             Assert.False(userSettings.Test());
         }
 
         /// <summary>
-        /// Tests UserSettings Test method Full. Settings are equal. Existing has no schema element, input does.
+        /// Tests UserSettings Test method Overwrite. Settings are equal. Existing has no schema element, input does.
         /// </summary>
         [Fact]
-        public void UserSettings_Test_Full_Equal_ExistingNoSchema()
+        public void UserSettings_Test_Overwrite_Equal_ExistingNoSchema()
         {
-            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
-
             string existingContentFile = @"{
   ""source"": {
     ""autoUpdateIntervalInMinutes"": 5
   }
 }";
+            var userSettingsFile = this.SetUpSettingsFile(existingContentFile);
 
-            File.WriteAllText(userSettingsFile, existingContentFile);
+            var inputSettings = new Hashtable()
+            {
+                {
+                    "$schema",
+                    "https://aka.ms/winget-settings.schema.json"
+                },
+                {
+                    "source",
+                    new Hashtable()
+                    {
+                        {
+                            "autoUpdateIntervalInMinutes",
+                            5
+                        },
+                    }
+                },
+            };
 
-            // Hand roll it.
-            var inputSettings = new JObject();
-
-            var source = new JObject();
-            source.Add("autoUpdateIntervalInMinutes", 5);
-
-            inputSettings.Add("$schema", "https://aka.ms/winget-settings.schema.json");
-            inputSettings.Add("source", source);
-
-            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Full, userSettingsFile);
+            var userSettings = new UserSettings(inputSettings, userSettingsFile, true);
 
             Assert.True(userSettings.Test());
         }
 
         /// <summary>
-        /// Tests UserSettings Test method Full. Settings are equal. Existing has schema element, input does not.
+        /// Tests UserSettings Test method Overwrite. Settings are equal. Existing has schema element, input does not.
         /// </summary>
         [Fact]
-        public void UserSettings_Test_Full_Equal_InputNoSchema()
+        public void UserSettings_Test_Overwrite_Equal_InputNoSchema()
         {
-            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
-
             string existingContentFile = @"{
   ""$schema"": ""https://aka.ms/winget-settings.schema.json"",
   ""installBehavior"": {
@@ -680,46 +852,73 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
     ""autoUpdateIntervalInMinutes"": 5
   }
 }";
+            var userSettingsFile = this.SetUpSettingsFile(existingContentFile);
 
-            File.WriteAllText(userSettingsFile, existingContentFile);
-
-            var inputSettings = new
+            var inputSettings = new Hashtable()
             {
-                source = new
                 {
-                    autoUpdateIntervalInMinutes = 5,
-                },
-                visual = new
-                {
-                    progressBar = "rainbow",
-                },
-                installBehavior = new
-                {
-                    preferences = new
+                    "source",
+                    new Hashtable()
                     {
-                        scope = "user",
-                        locale = new string[] { "en-US", "es-MX" },
-                    },
+                        {
+                            "autoUpdateIntervalInMinutes",
+                            5
+                        },
+                    }
                 },
-                telemetry = new
                 {
-                    disable = false,
+                    "visual",
+                    new Hashtable()
+                    {
+                        {
+                            "progressBar",
+                            "rainbow"
+                        },
+                    }
+                },
+                {
+                    "installBehavior",
+                    new Hashtable()
+                    {
+                        {
+                            "preferences",
+                            new Hashtable()
+                            {
+                                {
+                                    "scope",
+                                    "user"
+                                },
+                                {
+                                    "locale",
+                                    new string[] { "en-US", "es-MX" }
+                                },
+                            }
+                        },
+                    }
+                },
+                {
+                    "telemetry",
+                    new Hashtable()
+                    {
+                        {
+                            "disable",
+                            false
+                        },
+                    }
                 },
             };
 
-            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Full, userSettingsFile);
+            var userSettings = new UserSettings(inputSettings, userSettingsFile, true);
 
             Assert.True(userSettings.Test());
         }
 
         /// <summary>
-        /// Tests UserSettings Test method Full. Settings are equal.
+        /// Tests UserSettings Test method Overwrite. Settings are equal.
         /// </summary>
         [Fact]
-        public void UserSettings_Test_Full_NotEqual_DifferentValues()
+        public void UserSettings_Test_Overwrite_NotEqual_DifferentValues()
         {
-            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
-
             string existingContentFile = @"{
   ""installBehavior"": {
     ""preferences"": {
@@ -740,43 +939,73 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
     ""autoUpdateIntervalInMinutes"": 5
   }
 }";
+            var userSettingsFile = this.SetUpSettingsFile(existingContentFile);
 
-            File.WriteAllText(userSettingsFile, existingContentFile);
-
-            var inputSettings = new
+            var inputSettings = new Hashtable()
             {
-                source = new
                 {
-                    autoUpdateIntervalInMinutes = 5,
-                },
-                visual = new
-                {
-                    progressBar = "retro",
-                },
-                installBehavior = new
-                {
-                    preferences = new
+                    "source",
+                    new Hashtable()
                     {
-                        scope = "user",
-                        locale = new string[] { "en-US", "es-MX" },
-                    },
+                        {
+                            "autoUpdateIntervalInMinutes",
+                            5
+                        },
+                    }
                 },
-                telemetry = new
                 {
-                    disable = false,
+                    "visual",
+                    new Hashtable()
+                    {
+                        {
+                            "progressBar",
+                            "retro"
+                        },
+                    }
+                },
+                {
+                    "installBehavior",
+                    new Hashtable()
+                    {
+                        {
+                            "preferences",
+                            new Hashtable()
+                            {
+                                {
+                                    "scope",
+                                    "user"
+                                },
+                                {
+                                    "locale",
+                                    new string[] { "en-US", "es-MX" }
+                                },
+                            }
+                        },
+                    }
+                },
+                {
+                    "telemetry",
+                    new Hashtable()
+                    {
+                        {
+                            "disable",
+                            false
+                        },
+                    }
                 },
             };
 
-            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Full, userSettingsFile);
+            var userSettings = new UserSettings(inputSettings, userSettingsFile, true);
 
             Assert.False(userSettings.Test());
         }
 
+        /// <summary>
+        /// UserSettings Test method Partial. Input is in settings.
+        /// </summary>
         [Fact]
         public void UserSettings_Test_Partial_Equal_ContainsAll()
         {
-            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
-
             string existingContentFile = @"{
   ""installBehavior"": {
     ""preferences"": {
@@ -797,43 +1026,73 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
     ""autoUpdateIntervalInMinutes"": 5
   }
 }";
+            var userSettingsFile = this.SetUpSettingsFile(existingContentFile);
 
-            File.WriteAllText(userSettingsFile, existingContentFile);
-
-            var inputSettings = new
+            var inputSettings = new Hashtable()
             {
-                source = new
                 {
-                    autoUpdateIntervalInMinutes = 5,
-                },
-                visual = new
-                {
-                    progressBar = "retro",
-                },
-                installBehavior = new
-                {
-                    preferences = new
+                    "source",
+                    new Hashtable()
                     {
-                        scope = "user",
-                        locale = new string[] { "en-US", "es-MX" },
-                    },
+                        {
+                            "autoUpdateIntervalInMinutes",
+                            5
+                        },
+                    }
                 },
-                telemetry = new
                 {
-                    disable = false,
+                    "visual",
+                    new Hashtable()
+                    {
+                        {
+                            "progressBar",
+                            "retro"
+                        },
+                    }
+                },
+                {
+                    "installBehavior",
+                    new Hashtable()
+                    {
+                        {
+                            "preferences",
+                            new Hashtable()
+                            {
+                                {
+                                    "scope",
+                                    "user"
+                                },
+                                {
+                                    "locale",
+                                    new string[] { "en-US", "es-MX" }
+                                },
+                            }
+                        },
+                    }
+                },
+                {
+                    "telemetry",
+                    new Hashtable()
+                    {
+                        {
+                            "disable",
+                            false
+                        },
+                    }
                 },
             };
 
-            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Full, userSettingsFile);
+            var userSettings = new UserSettings(inputSettings, userSettingsFile, true);
 
             Assert.True(userSettings.Test());
         }
 
+        /// <summary>
+        /// UserSettings Test method Partial. Input is in settings.
+        /// </summary>
         [Fact]
         public void UserSettings_Test_Partial_Equal_InputContainsLess()
         {
-            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
-
             string existingContentFile = @"{
   ""installBehavior"": {
     ""preferences"": {
@@ -854,39 +1113,63 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
     ""autoUpdateIntervalInMinutes"": 5
   }
 }";
+            var userSettingsFile = this.SetUpSettingsFile(existingContentFile);
 
-            File.WriteAllText(userSettingsFile, existingContentFile);
-
-            var inputSettings = new
+            var inputSettings = new Hashtable()
             {
-                source = new
                 {
-                    autoUpdateIntervalInMinutes = 5,
-                },
-                installBehavior = new
-                {
-                    preferences = new
+                    "source",
+                    new Hashtable()
                     {
-                        scope = "user",
-                        locale = new string[] { "en-US", "es-MX" },
-                    },
+                        {
+                            "autoUpdateIntervalInMinutes",
+                            5
+                        },
+                    }
                 },
-                telemetry = new
                 {
-                    disable = false,
+                    "installBehavior",
+                    new Hashtable()
+                    {
+                        {
+                            "preferences",
+                            new Hashtable()
+                            {
+                                {
+                                    "scope",
+                                    "user"
+                                },
+                                {
+                                    "locale",
+                                    new string[] { "en-US", "es-MX" }
+                                },
+                            }
+                        },
+                    }
+                },
+                {
+                    "telemetry",
+                    new Hashtable()
+                    {
+                        {
+                            "disable",
+                            false
+                        },
+                    }
                 },
             };
 
-            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Partial, userSettingsFile);
+            var userSettings = new UserSettings(inputSettings, userSettingsFile, false);
 
             Assert.True(userSettings.Test());
         }
 
+        /// <summary>
+        /// UserSettings Test method Partial. Input is not in the settings because it has more properties.
+        /// </summary>
         [Fact]
         public void UserSettings_Test_Partial_NotEqual_InputContainsMore()
         {
-            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
-
             string existingContentFile = @"{
   ""installBehavior"": {
     ""preferences"": {
@@ -904,43 +1187,73 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
     ""autoUpdateIntervalInMinutes"": 5
   }
 }";
+            var userSettingsFile = this.SetUpSettingsFile(existingContentFile);
 
-            File.WriteAllText(userSettingsFile, existingContentFile);
-
-            var inputSettings = new
+            var inputSettings = new Hashtable()
             {
-                source = new
                 {
-                    autoUpdateIntervalInMinutes = 5,
-                },
-                visual = new
-                {
-                    progressBar = "retro",
-                },
-                installBehavior = new
-                {
-                    preferences = new
+                    "source",
+                    new Hashtable()
                     {
-                        scope = "user",
-                        locale = new string[] { "en-US", "es-MX" },
-                    },
+                        {
+                            "autoUpdateIntervalInMinutes",
+                            5
+                        },
+                    }
                 },
-                telemetry = new
                 {
-                    disable = false,
+                    "visual",
+                    new Hashtable()
+                    {
+                        {
+                            "progressBar",
+                            "retro"
+                        },
+                    }
+                },
+                {
+                    "installBehavior",
+                    new Hashtable()
+                    {
+                        {
+                            "preferences",
+                            new Hashtable()
+                            {
+                                {
+                                    "scope",
+                                    "user"
+                                },
+                                {
+                                    "locale",
+                                    new string[] { "en-US", "es-MX" }
+                                },
+                            }
+                        },
+                    }
+                },
+                {
+                    "telemetry",
+                    new Hashtable()
+                    {
+                        {
+                            "disable",
+                            false
+                        },
+                    }
                 },
             };
 
-            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Partial, userSettingsFile);
+            var userSettings = new UserSettings(inputSettings, userSettingsFile, false);
 
             Assert.False(userSettings.Test());
         }
 
+        /// <summary>
+        /// UserSettings Test method Partial. Input is not in the settings because a property has a different value.
+        /// </summary>
         [Fact]
         public void UserSettings_Test_Partial_NotEqual_DifferentValues()
         {
-            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
-
             string existingContentFile = @"{
   ""installBehavior"": {
     ""preferences"": {
@@ -961,36 +1274,107 @@ namespace Microsoft.WinGet.Client.Tests.Tests.DscResources
     ""autoUpdateIntervalInMinutes"": 5
   }
 }";
+            var userSettingsFile = this.SetUpSettingsFile(existingContentFile);
 
-            File.WriteAllText(userSettingsFile, existingContentFile);
-
-            var inputSettings = new
+            var inputSettings = new Hashtable()
             {
-                source = new
                 {
-                    autoUpdateIntervalInMinutes = 5,
-                },
-                visual = new
-                {
-                    progressBar = "retro",
-                },
-                installBehavior = new
-                {
-                    preferences = new
+                    "source",
+                    new Hashtable()
                     {
-                        scope = "user",
-                        locale = new string[] { "en-US", "es-MX" },
-                    },
+                        {
+                            "autoUpdateIntervalInMinutes",
+                            5
+                        },
+                    }
                 },
-                telemetry = new
                 {
-                    disable = false,
+                    "visual",
+                    new Hashtable()
+                    {
+                        {
+                            "progressBar",
+                            "retro"
+                        },
+                    }
+                },
+                {
+                    "installBehavior",
+                    new Hashtable()
+                    {
+                        {
+                            "preferences",
+                            new Hashtable()
+                            {
+                                {
+                                    "scope",
+                                    "user"
+                                },
+                                {
+                                    "locale",
+                                    new string[] { "en-US", "es-MX" }
+                                },
+                            }
+                        },
+                    }
+                },
+                {
+                    "telemetry",
+                    new Hashtable()
+                    {
+                        {
+                            "disable",
+                            false
+                        },
+                    }
                 },
             };
 
-            var userSettings = new UserSettings(inputSettings, UserSettings.ResourceMode.Partial, userSettingsFile);
+            var userSettings = new UserSettings(inputSettings, userSettingsFile, false);
 
             Assert.False(userSettings.Test());
+        }
+
+        /// <summary>
+        /// Tests user settings Get. Gets the user settings then calls test to make sure it is right.
+        /// </summary>
+        [Fact]
+        public void UserSettings_Get()
+        {
+            string existingContentFile = @"{
+  ""installBehavior"": {
+    ""preferences"": {
+      ""scope"": ""user"",
+      ""locale"": [
+        ""en-US"",
+        ""es-MX"",
+      ]
+    }
+  },
+  ""telemetry"": {
+    ""disable"": false
+  },
+  ""visual"": {
+    ""progressBar"": ""rainbow""
+  },
+  ""source"": {
+    ""autoUpdateIntervalInMinutes"": 5
+  }
+}";
+            var userSettingsFile = this.SetUpSettingsFile(existingContentFile);
+
+            var userSettings = new UserSettings(userSettingsFile, true);
+
+            var newUserSettings = userSettings.Get();
+
+            Assert.True(newUserSettings.Test());
+        }
+
+        private string SetUpSettingsFile(string existingContentFile)
+        {
+            var userSettingsFile = Path.Combine(this.mockFileDirectory, Path.GetRandomFileName());
+            File.WriteAllText(userSettingsFile, existingContentFile);
+            return userSettingsFile;
         }
     }
 }
