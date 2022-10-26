@@ -31,11 +31,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Microsoft.Management.Deployment\Microsoft.Management.Deployment.vcxproj">
+    <ProjectReference Include="$(SolutionDir)Microsoft.Management.Deployment\Microsoft.Management.Deployment.vcxproj">
       <OutputItemType>Content</OutputItemType>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </ProjectReference>
-    <ProjectReference Include="..\..\UndockedRegFreeWinRT\UndockedRegFreeWinRT\UndockedRegFreeWinRT.vcxproj">
+    <ProjectReference Include="$(SolutionDir)UndockedRegFreeWinRT\UndockedRegFreeWinRT\UndockedRegFreeWinRT.vcxproj">
       <OutputItemType>Content</OutputItemType>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </ProjectReference>

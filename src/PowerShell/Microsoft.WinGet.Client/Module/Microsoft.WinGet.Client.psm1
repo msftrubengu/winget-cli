@@ -36,12 +36,12 @@ class UserSettings
     {
         $settingsPath = [Microsoft.WinGet.Client.DscResouces.UserSettings]::GetWinGetSettingsFilePath()
         $userSettingsObj = New-Object Microsoft.WinGet.Client.DscResouces.UserSettings($settingsPath, $this.Overwrite)
-
+        $userSettingsGet = $userSettingsObj.Get()
         $s = Get-UserSid
         $result = @{
             SID = $s
-            Settings = $userSettingsObj.Settings
-            Overwrite = $this.Overwrite
+            Settings = $userSettingsGet.Settings
+            Overwrite = $userSettingsGet.Overwrite
         }
         return $result
     }
