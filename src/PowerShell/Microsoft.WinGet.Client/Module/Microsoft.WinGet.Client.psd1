@@ -106,7 +106,7 @@ FunctionsToExport = @(
 AliasesToExport = @()
 
 # DSC resources to export from this module
-DscResourcesToExport = @('UserSettings')
+DscResourcesToExport = @('UserSettingsResource', 'SourcesResource')
 
 # List of all modules packaged with this module
 # ModuleList = @()

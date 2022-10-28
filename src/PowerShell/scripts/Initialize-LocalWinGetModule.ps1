@@ -3,6 +3,7 @@
 
 <#
     .SYNOPSIS
+        Helper script to setup the module locally.
         - Copies the PowerShell module output into this location.
         - Copies the modules files from the project because there's no guarantee they are updated in the module output
           location.
@@ -36,9 +37,17 @@ xcopy "$PSScriptRoot\..\..\$Platform\$Configuration\PowerShell\" "$PSScriptRoot\
 # Copy PowerShell files. VS won't update the files if there's nothing to build.
 xcopy "$PSScriptRoot\..\Microsoft.WinGet.Client\Module\" "$PSScriptRoot\Module\Microsoft.WinGet.Client\" /d /s /f /y
 
-# Add it to module path.
+# Import-Module with Force just changes functions in the root module, not any nested ones. There's no way to load any
+# updated classes. To ensure that you are running the latest version run Remove-Module
+if (Get-Module -ListAvailable -Name Microsoft.WinGet.Client)
+{
+    Remove-Module Microsoft.WinGet.Client
+}
+
+# Add it to module path if not there.
 $outputModule = "$PSScriptRoot\Module"
-if ($env:PSModulePath -notlike $outputModule) {
+if ($env:PSModulePath -notlike $outputModule)
+{
     $env:PSModulePath += ";$outputModule"
 }
 
@@ -51,11 +60,14 @@ Import-Module Microsoft.WinGet.Client -Force
 #    }
 #}
 #
+
+#$newsources = @([WinGetSource]::new("int", "https://winget-int.azureedge.net/cache"))
+#
 #$resource = @{
-#    Name = 'UserSettings'
+#    Name = 'SourcesResource'
 #    ModuleName = 'Microsoft.WinGet.Client'
 #    Property = @{
-#        Settings = $s
+#        Sources = $newsources
 #    }
 #}
 #
