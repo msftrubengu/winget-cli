@@ -351,12 +351,6 @@ jobs:
       Contents: '**\*'
       TargetFolder: '$(Build.ArtifactStagingDirectory)'
 
-  - task: PowerShell@2
-    displayName: 'Copy PowerShell Module Files to Output'
-    inputs:
-      filePath: 'src\PowerShell\Microsoft.WinGet.Client\Copy-ModuleFiles.ps1'
-      arguments: '-OutDir $(Build.ArtifactStagingDirectory)'
-  
   - task: PublishPipelineArtifact@1
     displayName: Publish PowerShell Module Artifacts
     inputs:
