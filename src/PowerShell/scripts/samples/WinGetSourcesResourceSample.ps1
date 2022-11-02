@@ -79,3 +79,4 @@ if (-not $testResult.InDesiredState)
 
 # nvm, add it again
 $resource.Property.Command = [SourceCommand]::Add
+Invoke-DscResource @resource -Method Set | Out-Null
