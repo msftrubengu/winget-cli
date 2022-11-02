@@ -5,7 +5,6 @@
     .SYNOPSIS
         Simple sample on how to use WinGetUserSettings DSC resource.
         Requires PowerShell DSC 3.0 https://learn.microsoft.com/en-us/powershell/dsc/overview?view=dsc-3.0
-        Assu
         IMPORTANT: this will modify your settings. Use the -Restore to get back to your original settings
 
     .PARAMETER Restore
