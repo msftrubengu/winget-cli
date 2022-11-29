@@ -61,8 +61,10 @@ namespace AppInstaller::CLI::Resource
         WINGET_DEFINE_RESOURCE_STRINGID(DependenciesManagementError);
         WINGET_DEFINE_RESOURCE_STRINGID(DependenciesManagementExitMessage);
         WINGET_DEFINE_RESOURCE_STRINGID(DisabledByGroupPolicy);
+        WINGET_DEFINE_RESOURCE_STRINGID(DisableAdminSettingFailed);
         WINGET_DEFINE_RESOURCE_STRINGID(DisableInteractivityArgumentDescription);
         WINGET_DEFINE_RESOURCE_STRINGID(Done);
+        WINGET_DEFINE_RESOURCE_STRINGID(EnableAdminSettingFailed);
         WINGET_DEFINE_RESOURCE_STRINGID(ExactArgumentDescription);
         WINGET_DEFINE_RESOURCE_STRINGID(ExperimentalArgumentDescription);
         WINGET_DEFINE_RESOURCE_STRINGID(ExperimentalCommandLongDescription);
@@ -219,6 +221,7 @@ namespace AppInstaller::CLI::Resource
         WINGET_DEFINE_RESOURCE_STRINGID(NoPackagesFoundInImportFile);
         WINGET_DEFINE_RESOURCE_STRINGID(Notes);
         WINGET_DEFINE_RESOURCE_STRINGID(NoUninstallInfoFound);
+        WINGET_DEFINE_RESOURCE_STRINGID(NoUpgradeArgumentDescription);
         WINGET_DEFINE_RESOURCE_STRINGID(NoVTArgumentDescription);
         WINGET_DEFINE_RESOURCE_STRINGID(OpenLogsArgumentDescription);
         WINGET_DEFINE_RESOURCE_STRINGID(OpenSourceFailedNoMatch);
@@ -231,6 +234,7 @@ namespace AppInstaller::CLI::Resource
         WINGET_DEFINE_RESOURCE_STRINGID(Package);
         WINGET_DEFINE_RESOURCE_STRINGID(PackageAgreementsNotAgreedTo);
         WINGET_DEFINE_RESOURCE_STRINGID(PackageAgreementsPrompt);
+        WINGET_DEFINE_RESOURCE_STRINGID(PackageAlreadyInstalled);
         WINGET_DEFINE_RESOURCE_STRINGID(PackageDependencies);
         WINGET_DEFINE_RESOURCE_STRINGID(PendingWorkError);
         WINGET_DEFINE_RESOURCE_STRINGID(PoliciesDisabled);
