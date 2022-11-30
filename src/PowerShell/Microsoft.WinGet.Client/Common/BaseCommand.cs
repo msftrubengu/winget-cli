@@ -20,10 +20,9 @@ namespace Microsoft.WinGet.Client.Common
         public BaseCommand()
             : base()
         {
-            // TODO: fix to system when Ryan's change is merged.
-            if (Utilities.ExecutingAsAdministrator)
+            if (Utilities.ExecutingAsSystem)
             {
-                throw new Exception(Utilities.ResourceManager.GetString("ExceptionAdministratorDisabled"));
+                throw new Exception(Utilities.ResourceManager.GetString("ExceptionSystemDisabled"));
             }
         }
     }
