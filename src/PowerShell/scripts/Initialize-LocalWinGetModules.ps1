@@ -3,8 +3,8 @@
 
 <#
     .SYNOPSIS
-        Helper script to setup the module locally.
-        - Copies the PowerShell module output into this location.
+        Helper script to setup the modules locally.
+        - Copies the PowerShell modules output into this location.
         - Copies the modules files from the project because there's no guarantee they are updated in the module output
           location.
         - Adds the module location to PSModulePath if not there.
@@ -70,7 +70,7 @@ foreach($module in $modules)
     }
 
     # Copy PowerShell files even for modules with binaray resoures.
-    # VS won't update the files if there's nothing to build....
+    # VS won't update the files if there's nothing to build...
     Write-Host "Coping module $($module.Name)" -ForegroundColor Green
     xcopy $module.ModuleRoot "$moduleRootOutput\$($module.Name)\" /d /s /f /y
 

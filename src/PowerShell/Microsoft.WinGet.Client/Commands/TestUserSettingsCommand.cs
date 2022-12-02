@@ -13,8 +13,7 @@ namespace Microsoft.WinGet.Client.Commands
     using Newtonsoft.Json.Linq;
 
     /// <summary>
-    /// Sets the specified user settings into the winget user settings. If overwrite, then deletes previous settings
-    /// and add the new ones. Otherwise merge them, if there's a conflict in the settings keep new configuration.
+    /// Tests the specified user settings into the winget user settings.
     /// </summary>
     [Cmdlet(VerbsDiagnostic.Test, Constants.Nouns.UserSettings)]
     [OutputType(typeof(bool))]
@@ -29,13 +28,13 @@ namespace Microsoft.WinGet.Client.Commands
         public Hashtable UserSettings { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether to test is full or not.
+        /// Gets or sets a value indicating whether to compare only the input settings.
         /// </summary>
         [Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter Full { get; set; }
+        public SwitchParameter OnlyInputSettings { get; set; }
 
         /// <summary>
-        /// Updates a package from the pipeline or from the local system.
+        /// Process the cmdlet and writes the result of the comparison.
         /// </summary>
         protected override void ProcessRecord()
         {
@@ -58,12 +57,12 @@ namespace Microsoft.WinGet.Client.Commands
                 newSettings.Remove(SchemaKey);
             }
 
-            if (this.Full.ToBool())
+            if (this.OnlyInputSettings.ToBool())
             {
-                return JToken.DeepEquals(newSettings, currentSettings);
+                return this.PartialCompare(newSettings, currentSettings);
             }
 
-            return this.PartialCompare(newSettings, currentSettings);
+            return JToken.DeepEquals(newSettings, currentSettings);
         }
 
         private bool PartialCompare(JObject jObject, JObject other)

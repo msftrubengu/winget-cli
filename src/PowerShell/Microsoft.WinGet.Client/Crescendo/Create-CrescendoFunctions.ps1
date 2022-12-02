@@ -3,16 +3,16 @@
 
 <#
     .SYNOPSIS
-        Exports crescendo module and merge module manifests.
+        Creates crescendo module for Microsoft.WinGet.Client and merge module manifests.
     
-    .PARAMETER Platform
-        The platform we are building for.
+    .PARAMETER ConfigurationFile
+        The crescendo configuration file.
     
-    .PARAMETER Configuration
-        The configuration we are building in.
+    .PARAMETER ModuleName
+        The name of the module to be created.
 
-    .PARAMETER OutDir
-        The base output directory where the module manifest will be.
+    .PARAMETER ModuleOutputDirectory
+        Where to output the crescendo output files.
 #>
 
 [CmdletBinding()]

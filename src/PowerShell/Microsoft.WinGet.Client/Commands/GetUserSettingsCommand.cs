@@ -12,15 +12,14 @@ namespace Microsoft.WinGet.Client.Commands
     using Newtonsoft.Json.Linq;
 
     /// <summary>
-    /// Sets the specified user settings into the winget user settings. If overwrite, then deletes previous settings
-    /// and add the new ones. Otherwise merge them, if there's a conflict in the settings keep new configuration.
+    /// Gets winget's user settings as a Hashtable.
     /// </summary>
     [Cmdlet(VerbsCommon.Get, Constants.Nouns.UserSettings)]
     [OutputType(typeof(Hashtable))]
     public sealed class GetUserSettingsCommand : BaseUserSettingsCommand
     {
         /// <summary>
-        /// Updates a package from the pipeline or from the local system.
+        /// Writes the settings file as a Hashtable.
         /// </summary>
         protected override void ProcessRecord()
         {

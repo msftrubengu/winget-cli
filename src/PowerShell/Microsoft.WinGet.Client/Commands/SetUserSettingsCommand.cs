@@ -16,8 +16,8 @@ namespace Microsoft.WinGet.Client.Commands
     using Newtonsoft.Json.Linq;
 
     /// <summary>
-    /// Sets the specified user settings into the winget user settings. If overwrite, then deletes previous settings
-    /// and add the new ones. Otherwise merge them, if there's a conflict in the settings keep new configuration.
+    /// Sets the specified user settings into the winget user settings. If the merge switch is on, merges current user
+    /// settings with the input settings. Otherwise, overwrites the input settings to settings.json.
     /// </summary>
     [Cmdlet(VerbsCommon.Set, Constants.Nouns.UserSettings)]
     [OutputType(typeof(Hashtable))]
@@ -32,24 +32,24 @@ namespace Microsoft.WinGet.Client.Commands
         public Hashtable UserSettings { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether to continue upon non security related failures.
+        /// Gets or sets a value indicating whether to merge the current user settings and the input settings.
         /// </summary>
         [Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter Overwrite { get; set; }
+        public SwitchParameter Merge { get; set; }
 
         /// <summary>
-        /// Updates a package from the pipeline or from the local system.
+        /// Process input of cmdlet.
         /// </summary>
         protected override void ProcessRecord()
         {
             var newSettings = HashtableToJObject(this.UserSettings);
 
             // Merge settings.
-            if (!this.Overwrite.ToBool())
+            if (this.Merge.ToBool())
             {
                 var currentSettings = LocalSettingsFileToJObject();
 
-                // To make the input setting to triumph, input user settings need to be merged into the existing settings.
+                // To make the input settings to triumph, they need to be merged into the existing settings.
                 currentSettings.Merge(newSettings, new JsonMergeSettings
                 {
                     MergeArrayHandling = MergeArrayHandling.Union,
