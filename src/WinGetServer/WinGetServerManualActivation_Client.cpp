@@ -71,14 +71,17 @@ HRESULT LaunchWinGetServerWithManualActivation()
     std::wstring commandLineInput = std::wstring{ serverExePath } + L" --manualActivation";
 
     STARTUPINFO info = { sizeof(info) };
-    PROCESS_INFORMATION processInfo;
-    RETURN_LAST_ERROR_IF(!CreateProcessW(NULL, &commandLineInput[0], NULL, NULL, FALSE, 0, NULL, NULL, &info, &processInfo));
+    wil::unique_process_information process;
+
+    RETURN_LAST_ERROR_IF(!CreateProcessW(NULL, &commandLineInput[0], NULL, NULL, FALSE, 0, NULL, NULL, &info, &process));
 
     // Wait for manual reset event from server before proceeding with COM activation.
-    wil::unique_event_watcher eventWatcher;
     wil::unique_event manualResetEvent;
-    manualResetEvent.open(L"WinGetServerStartEvent");
-    manualResetEvent.wait();
+    if (manualResetEvent.try_open(L"WinGetServerStartEvent"))
+    {
+        manualResetEvent.wait();
+        manualResetEvent.ResetEvent();
+    }
 
     return S_OK;
 }
