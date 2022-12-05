@@ -79,7 +79,7 @@ namespace Microsoft.WinGet.Client.Commands
         /// Helper method to order alphabetically properties. Newtonsoft doesn't have a nice way
         /// to do it via a custom JsonConverter.
         /// </summary>
-        /// <param name="jObject">JObject</param>
+        /// <param name="jObject">JObject.</param>
         /// <returns>New ordered JObject.</returns>
         private static JObject CreateAlphabeticallyOrderedJObject(JObject jObject)
         {

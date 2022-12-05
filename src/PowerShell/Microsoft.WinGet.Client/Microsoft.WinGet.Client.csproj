@@ -14,14 +14,15 @@
     <PowerShellModuleOutputDirectory>$(BuildOutputDirectory)PowerShell\Microsoft.WinGet.Client</PowerShellModuleOutputDirectory>
     <Platforms>x64;x86</Platforms>
     <TargetFrameworks>$(CoreFramework);$(DesktopFramework)</TargetFrameworks>
+    <DocumentationFile>$(OutputPath)\Microsoft.WinGet.Client.xml</DocumentationFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(WingetUseProdClsids)' == 'true'">
     <DefineConstants>USE_PROD_CLSIDS</DefineConstants>
   </PropertyGroup>
-    
+
   <ItemGroup>
-    <AdditionalFiles Include="..\stylecop.json" Link="stylecop.json" />
+    <AdditionalFiles Include="..\..\stylecop.json" Link="stylecop.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -44,6 +45,17 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </ProjectReference>
   </ItemGroup>
+
+  <PropertyGroup>
+    <!-- Disable warning for CS1591 because auto generated Microsoft.Management.Deployment -->
+    <!-- For our code, we still have stylecops acting on it. -->
+    <NoWarn>1591</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <WarningsAsErrors />
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == '$(CoreFramework)'">
     <PackageReference Include="Microsoft.Windows.CsWinRT" Version="1.6.5" />
