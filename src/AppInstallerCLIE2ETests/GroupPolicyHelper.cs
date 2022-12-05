@@ -33,20 +33,6 @@ namespace AppInstallerCLIE2ETests
             return XElement.Parse(fileText);
         });
 
-        private static GroupPolicyHelper[] allPolicies = new GroupPolicyHelper[]
-        {
-            EnableWinget,
-            EnableSettings,
-            EnableExperimentalFeatures,
-            EnableLocalManifests,
-            EnableHashOverride,
-            EnableDefaultSource,
-            EnableMicrosoftStoreSource,
-            EnableAdditionalSources,
-            EnableAllowedSources,
-            SourceAutoUpdateInterval,
-        };
-
         /// <summary>
         /// Name of the policy. Used to identify it in the file.
         /// </summary>
@@ -121,6 +107,20 @@ namespace AppInstallerCLIE2ETests
         /// </summary>
         public static GroupPolicyHelper SourceAutoUpdateInterval { get; private set; } = new GroupPolicyHelper("SourceAutoUpdateInterval", "SourceAutoUpdateInterval");
 
+        private static GroupPolicyHelper[] AllPolicies { get; set; } = new GroupPolicyHelper[]
+        {
+            EnableWinget,
+            EnableSettings,
+            EnableExperimentalFeatures,
+            EnableLocalManifests,
+            EnableHashOverride,
+            EnableDefaultSource,
+            EnableMicrosoftStoreSource,
+            EnableAdditionalSources,
+            EnableAllowedSources,
+            SourceAutoUpdateInterval,
+        };
+
         /// <summary>
         /// Gets the content of the ADMX file as an XML.
         /// </summary>
@@ -172,7 +172,7 @@ namespace AppInstallerCLIE2ETests
         /// </summary>
         public static void DeleteExistingPolicies()
         {
-            foreach (var policy in allPolicies)
+            foreach (var policy in AllPolicies)
             {
                 policy.SetNotConfigured();
             }
