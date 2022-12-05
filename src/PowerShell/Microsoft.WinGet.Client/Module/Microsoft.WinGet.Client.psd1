@@ -122,7 +122,8 @@ PrivateData = @{
             'PSEdition_Desktop',
             'PSEdition_Core',
             'Windows',
-            'WindowsPackageManager'
+            'WindowsPackageManager',
+            'WinGet'
         )
 
         # A URL to the license for this module.
