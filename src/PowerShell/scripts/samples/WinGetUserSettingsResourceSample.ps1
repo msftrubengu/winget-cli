@@ -4,8 +4,12 @@
 <#
     .SYNOPSIS
         Simple sample on how to use WinGetUserSettings DSC resource.
-        Requires PowerShell DSC 3.0 https://learn.microsoft.com/en-us/powershell/dsc/overview?view=dsc-3.0
-        IMPORTANT: this will modify your settings. Use the -Restore to get back to your original settings
+        Requires PSDesiredStateConfiguration v2 and enabling the
+        PSDesiredStateConfiguration.InvokeDscResource experimental feature
+        `Enable-ExperimentalFeature -Name PSDesiredStateConfiguration.InvokeDscResource`
+
+        IMPORTANT: If you loaded the released modules this will modify your settings.
+                   Use the -Restore to get back to your original settings
 
     .PARAMETER Restore
         Restore back to the original user settings.
@@ -39,10 +43,10 @@ $getResult.Settings | ConvertTo-Json
 $resource.Property = @{
     Settings = @{
         telemetry = @{
-            disable = $true
+            disable = $false
         }
     }
-    # If you want to check that there's only these settings use [WinGetAction]::Full
+    # If you want to check that this setting is the only setting set use [WinGetAction]::Full
     Action = [WinGetAction]::Partial
 }
 
@@ -55,6 +59,10 @@ if (-not $testResult.InDesiredState)
     Write-Host "New settings"
     $getResult = Invoke-DscResource @resource -Method Get
     $getResult.Settings | ConvertTo-Json
+}
+else
+{
+    Write-Host "Telemetry is already disabled"
 }
 
 if ($Restore)
