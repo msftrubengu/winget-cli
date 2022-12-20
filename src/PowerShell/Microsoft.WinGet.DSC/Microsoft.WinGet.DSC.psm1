@@ -21,44 +21,6 @@ try
     }
 }
 
-#region classes
-
-# Literally the same as Microsoft.Management.Deployment.PackageCatalogReference.
-# Using that type in a DSC resource it fails with MethodInvocationException: Exception calling
-# "ImportClassResourcesFromModule" with "4" argument(s): "The DSC resource 'PackageCatalogReference' has no default constructor."
-# TODO: figure that out.
-class WinGetSource
-{
-    [string]$Name;
-    [string]$Argument;
-    [string]$Type = "Microsoft.PreIndexed.Package";
-
-    # We explicity need the default constructor
-    WinGetSource()
-    {
-    }
-
-    WinGetSource([string]$n)
-    {
-        $this.Name = $n;
-    }
-
-    WinGetSource([string]$n, [string]$a)
-    {
-        $this.Name = $n;
-        $this.Argument = $a;
-    }
-
-    WinGetSource([string]$n, [string]$a, [string]$t)
-    {
-        $this.Name = $n;
-        $this.Argument = $a;
-        $this.Type = $t;
-    }
-}
-
-#endregion classes
-
 #region enums
 enum WinGetAction
 {
@@ -66,18 +28,20 @@ enum WinGetAction
     Full
 }
 
-enum SourceCommand
+enum Ensure
 {
-    Add
-    Remove
+    Absent
+    Present
 }
 
 #endregion enums
 
 #region DscResources
-# DSC Powershell doesn't support binary DSC resources without the MOF schema. Author here all DSC Resources.
+# Author here all DSC Resources.
+# DSC Powershell doesn't support binary DSC resources without the MOF schema.
+# DSC Powershell classes aren't discoverable if placed outside of the psm1.
 
-# This resource is in charge of editing the settings.json file of winget.
+# This resource is in charge of managing the settings.json file of winget.
 [DSCResource()]
 class WinGetUserSettingsResource
 {
@@ -90,41 +54,119 @@ class WinGetUserSettingsResource
     [Hashtable]$Settings
 
     [DscProperty()]
-    [WinGetAction]$Action = [WinGetAction]::Partial
+    [WinGetAction]$Action = [WinGetAction]::Full
 
     # Gets the current UserSettings by looking at the settings.json file for the current user.
     [WinGetUserSettingsResource] Get()
     {
-        $userSettings = Get-WinGetUserSettings
-        $s = Get-UserSid
+        Assert-WinGetCommand "Get-WinGetUserSettings"
+
+        $userSettings = Get-WinGetUserSettings | ConvertFrom-Json -AsHashtable
         $result = @{
-            SID = $s
+            SID = ''
             Settings = $userSettings
         }
         return $result
     }
 
-    # Tests if desired properties match. See notes on Overwrite.
+    # Tests if desired properties match.
     [bool] Test()
     {
+        Assert-WinGetCommand "Test-WinGetUserSettings"
+
         if ($this.Action -eq [WinGetAction]::Partial)
         {
-            return Test-WinGetUserSettings -UserSettings $this.Settings
+            return Test-WinGetUserSettings -UserSettings $this.Settings -IgnoreNotSet
         }
 
-        return Test-WinGetUserSettings -UserSettings $this.Settings -Full
+        return Test-WinGetUserSettings -UserSettings $this.Settings
     }
 
-    # Sets the desired properties. See notes on Overwrite.
+    # Sets the desired properties.
     [void] Set()
     {
+        Assert-WinGetCommand "Set-WinGetUserSettings"
+
         if ($this.Action -eq [WinGetAction]::Partial)
         {
-            Set-WinGetUserSettings -UserSettings $this.Settings | Out-Null
+            Set-WinGetUserSettings -UserSettings $this.Settings -Merge | Out-Null
         }
         else
         {
-            Set-WinGetUserSettings -UserSettings $this.Settings -Overwrite | Out-Null
+            Set-WinGetUserSettings -UserSettings $this.Settings | Out-Null
+        }
+    }
+}
+
+# Handles configuration of administrator settings.
+[DSCResource()]
+class WinGetAdminSettings
+{
+    # We need a key. Do not set.
+    [DscProperty(Key)]
+    [string]$SID
+
+    # A hash table with the desired admin settings.
+    [DscProperty(Mandatory)]
+    [Hashtable]$Settings
+
+    # Gets the administrator settings.
+    [WinGetAdminSettings] Get()
+    {
+        Assert-WinGetCommand "Get-WinGetSettings"
+        $settingsJson = Get-WinGetSettings | ConvertFrom-Json -AsHashtable
+        # Get admin setting values.
+
+        $result = @{
+            SID = ''
+            Settings = $settingsJson.adminSettings
+        }
+        return $result
+    }
+
+    # Tests if administrator settings given are set as expected.
+    # This doesn't do a full comparisson to allow users to don't have to update
+    # their resource everytime a new admin setting is added on winget.
+    [bool] Test()
+    {
+        $adminSettings = $this.Get().Settings
+        foreach ($adminSetting in $adminSettings.GetEnumerator())
+        {
+            if ($this.Settings.ContainsKey($adminSetting.Name))
+            {
+                if ($this.Settings[$adminSetting] -ne $adminSetting.Value)
+                {
+                    return $false
+                }
+            }
+        }
+
+        return $true
+    }
+
+    # Sets the desired properties.
+    [void] Set()
+    {
+        Assert-IsAdministrator
+        Assert-WinGetCommand "Enable-WinGetSetting"
+        Assert-WinGetCommand "Disable-WinGetSetting"
+
+        # It might be better to implement an internal Test with one value, or
+        # create a new instances with only one setting than calling Enable/Disable
+        # for all of them even if only one is different.
+        if (-not $this.Test())
+        {
+            foreach ($adminSetting in $this.Settings.GetEnumerator())
+            {
+                if ($adminSetting.Value)
+                {
+                    Enable-WinGetSetting -Name $adminSetting.Name
+                }
+                else
+                {
+                    Disable-WinGetSetting -Name $adminSetting.Name
+                }
+            }
         }
     }
 }
@@ -136,33 +178,38 @@ class WinGetSourcesResource
     [DscProperty(Key)]
     [string]$SID
 
-    # An array of WinGetSource.
+    # An array of Hashtable with the key value properites that follows the source's group policy schema.
     [DscProperty(Mandatory)]
-    [WinGetSource[]]$Sources
+    [Hashtable[]]$Sources
 
     [DscProperty()]
-    [SourceCommand]$Command = [SourceCommand]::Add
+    [Ensure]$Ensure = [Ensure]::Present
 
     [DscProperty()]
-    [WinGetAction]$Action = [WinGetAction]::Partial
+    [bool]$Reset = $false
+
+    [DscProperty()]
+    [WinGetAction]$Action = [WinGetAction]::Full
 
     # Gets the current sources on winget.
     [WinGetSourcesResource] Get()
     {
+        Assert-WinGetCommand "Get-WinGetSource"
         $packageCatalogReferences = Get-WinGetSource
-        $wingetSources = [List[WinGetSource]]::new()
+        $wingetSources = [List[Hashtable]]::new()
         foreach ($packageCatalogReference in $packageCatalogReferences)
         {
-            $source = [WinGetSource]::new(
-                $packageCatalogReference.Info.Name,
-                $packageCatalogReference.Info.Argument,
-                $packageCatalogReference.Info.Type)
+            $source = @{
+                Arg = $packageCatalogReference.Info.Argument
+                Identifier = $packageCatalogReference.Info.Id
+                Name = $packageCatalogReference.Info.Name
+                Type = $packageCatalogReference.Info.Type
+            }
             $wingetSources.Add($source)
         }
 
-        $s = Get-UserSid
         $result = @{
-            SID = $s
+            SID = ''
             Sources = $wingetSources
         }
         return $result
@@ -182,13 +229,25 @@ class WinGetSourcesResource
         # There's no need to differentiate between Partial and Full anymore.
         foreach ($source in $this.Sources)
         {
-            if ([string]::IsNullOrWhiteSpace($source.Name))
+            # Require Name and Arg.
+            if ((-not $source.ContainsKey("Name")) -or [string]::IsNullOrWhiteSpace($source.Name))
             {
-                throw "Invalid source"
+                throw "Invalid source input. Name is required."
             }
 
-            # These fields must match.
-            $result = $currentSources | Where-Object { $_.Name -eq $source.Name -and $_.Argument -eq $source.Argument -and $_.Type -eq $source.Type }
+            if ((-not $source.ContainsKey("Arg")) -or [string]::IsNullOrWhiteSpace($source.Arg))
+            {
+                throw "Invalid source input. Arg is required."
+            }
+
+            # Type has a default value.
+            $sourceType = "Microsoft.PreIndexed.Package"
+            if ($source.ContainsKey("Type") -and (-not([string]::IsNullOrWhiteSpace($source.Type))))
+            {
+                $sourceType = $source.Type
+            }
+
+            $result = $currentSources | Where-Object { $_.Name -eq $source.Name -and $_.Arg -eq $source.Arg -and $_.Type -eq $sourceType }
 
             # Source not found.
             if ($null -eq $result)
@@ -204,22 +263,35 @@ class WinGetSourcesResource
     [void] Set()
     {
         Assert-IsAdministrator
+        Assert-WinGetCommand "Add-WinGetSource"
+        Assert-WinGetCommand "Reset-WinGetSource"
+        Assert-WinGetCommand "Remove-WinGetSource"
 
-        foreach ($source in $this.Sources)
+        # Same comment as WinGetAdminSettings.
+        if (-not $this.Test())
         {
-            if ([string]::IsNullOrWhiteSpace($source.Name))
+            foreach ($source in $this.Sources)
             {
-                throw "Invalid source"
-            }
+                # The call to test already validated that Name and Arg are set and valid.
+                $sourceType = "Microsoft.PreIndexed.Package"
+                if ($source.ContainsKey("Type") -and (-not([string]::IsNullOrWhiteSpace($source.Type))))
+                {
+                    $sourceType = $source.Type
+                }
 
-            # Let winget.exe figure out if the source already exists or not.
-            if ($this.Command -eq [SourceCommand]::Add)
-            {
-                Add-WinGetSource -Name $source.Name -Argument $source.Argument -Type $source.Type
-            }
-            else
-            {
-                Remove-WinGetSource -Name $source.Name
+                if ($this.Ensure -eq [Ensure]::Present)
+                {
+                    Add-WinGetSource -Name $source.Name -Argument $source.Argument -Type $source.Type
+    
+                    if ($this.Reset)
+                    {
+                        Reset-WinGetSource -Name $source.Name
+                    }
+                }
+                else
+                {
+                    Remove-WinGetSource -Name $source.Name
+                }
             }
         }
     }

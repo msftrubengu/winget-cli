@@ -83,6 +83,7 @@ RequiredModules = @('Microsoft.WinGet.Client')
 # DSC resources to export from this module
 DscResourcesToExport = @(
     'WinGetUserSettingsResource'
+    'WinGetAdminSettings'
     'WinGetSourcesResource'
 )
 

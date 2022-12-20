@@ -101,7 +101,11 @@ PROCESS {
 
   .DESCRIPTION
   Enables the WinGet setting specified by the `Name` parameter.
-  Supported settings: `LocalManifestFiles` `BypassCertificatePinningForMicrosoftStore` `InstallerHashOverride`
+  Supported settings:
+    - LocalManifestFiles
+    - BypassCertificatePinningForMicrosoftStore
+    - InstallerHashOverride
+    - LocalArchiveMalwareScanOverride
 
   .PARAMETER Name
   Specifies the name of the setting to be enabled.
@@ -205,7 +209,11 @@ PROCESS {
 
   .DESCRIPTION
   Disables the WinGet setting specified by the `Name` parameter.
-  Supported settings: `LocalManifestFiles` `BypassCertificatePinningForMicrosoftStore` `InstallerHashOverride`
+  Supported settings:
+    - LocalManifestFiles
+    - BypassCertificatePinningForMicrosoftStore
+    - InstallerHashOverride
+    - LocalArchiveMalwareScanOverride
 
   .PARAMETER Name
   Specifies the name of the setting to be disabled.

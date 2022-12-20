@@ -1,11 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-function Get-UserSid
-{
-    return (whoami /user /FO csv | ConvertFrom-Csv).SID
-}
-
 # Check that we are running as an administrator
 function Assert-IsAdministrator
 {
@@ -18,4 +13,10 @@ function Assert-IsAdministrator
     {
         New-InvalidOperationException -Message "This resource must run as an Administrator."
     }
+}
+
+# Verify the command is present in the Microsoft.WinGet.Client Module
+function Assert-WinGetCommand([string]$cmdletName)
+{
+    $null = Get-Command -Module "Microsoft.WinGet.Client" -Name "blah" -ErrorAction Stop
 }
